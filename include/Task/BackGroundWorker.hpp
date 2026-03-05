@@ -1,161 +1,112 @@
-#pragma once
+#ifndef INCLUDE_TASK_BACKGROUNDWORKER_HPP
+#define INCLUDE_TASK_BACKGROUNDWORKER_HPP
 
-#include <thread>
+#include <any>
+#include <atomic>
+#include <condition_variable>
 #include <functional>
 #include <mutex>
-#include <condition_variable>
-#include <any>
+#include <thread>
 
-#include "Exception/Exception.hpp"
-
+#include "Exception/Error.hpp"
+#include "Task/TaskBase.hpp"
 #include "Templates/Property.hpp"
 
-#include "Task/TaskBase.hpp"
-
-
-#include <iostream>
 namespace Framework::Task {
 	using namespace Framework::Templates;
+
 	class BackGroundWorker : public TaskBase {
 	public:
 		class DoTaskEventArgs {
-			bool _cancel{ false };
-			std::any _result{};
+			bool cancel_{ false };
+			std::any result_;
+
 		public:
 			DoTaskEventArgs() = default;
 
-			void SetCancel(bool cancel) { _cancel = cancel; }
-			bool GetCancel() const { return _cancel; }
+			void set_cancel(bool cancel) { cancel_ = cancel; }
+			bool get_cancel() const { return cancel_; }
 
-			void SetResult(const std::any &result) { _result = result; }
-			void SetResult(std::any &&result) { _result = std::move(result); }
-			const std::any &GetResult() const { return _result; }
+			void set_result(const std::any &result) { result_ = result; }
+			void set_result(std::any &&result) { result_ = std::move(result); }
+			const std::any &get_result() const { return result_; }
 		};
 
 		class TaskCompletedEventArgs {
-			bool _cancelled{ false };
-			const std::any *_result{ nullptr };
-			Framework::Error::Code _error{ Framework::Error::Code::Unknown };
-		public:
-			TaskCompletedEventArgs(bool cancelled, const std::any &result, Framework::Error::Code error)
-				: _cancelled(cancelled), _result(&result), _error(error) {}
+			bool cancelled_{ false };
+			const std::any *result_{ nullptr };
+			Framework::Error::Code error_{ Framework::Error::Code::Unknown };
 
-			bool Cancelled() const { return _cancelled; }
-			Framework::Error::Code ErrorCode() const { return _error; }
+		public:
+			TaskCompletedEventArgs(bool cancelled, const std::any &result,
+								   Framework::Error::Code error)
+				: cancelled_(cancelled),
+				  result_(&result),
+				  error_(error) {}
+
+			bool cancelled() const { return cancelled_; }
+			Framework::Error::Code error_code() const { return error_; }
 			template <typename T = std::any>
-			const auto &Result() const { return std::any_cast<const T &>(*_result); }
+			const auto &result() const {
+				return std::any_cast<const T &>(*result_);
+			}
 		};
 
 		using Progress = uint8_t;
 
 		class ProgressChangedEventArgs {
-			Progress _progress{ 0 };
+			Progress progress_{ 0 };
+
 		public:
-			explicit ProgressChangedEventArgs(Progress progress) : _progress(progress) {}
-			Progress ProgressPercent() const { return _progress; }
+			explicit ProgressChangedEventArgs(Progress progress) : progress_(progress) {}
+			Progress progress_percent() const { return progress_; }
 		};
 
-
 		using Task = std::function<void(BackGroundWorker &, DoTaskEventArgs &)>;
-		using TaskCompletedEventHandler = std::function<void(BackGroundWorker &, TaskCompletedEventArgs &)>;
-		using ProgressChangedEventHandler = std::function<void(BackGroundWorker &, ProgressChangedEventArgs &)>;
-	private:
-		std::thread _thread;
-		Task _task;
-		std::mutex _mutex;
-		std::condition_variable _condition;
-		bool _running{ false };
-		bool _stop{ false };
-		bool _cancellationPending{ false };
-		Progress _progress{ 0 };
+		using TaskCompletedEventHandler =
+			std::function<void(BackGroundWorker &, TaskCompletedEventArgs &)>;
+		using ProgressChangedEventHandler =
+			std::function<void(BackGroundWorker &, ProgressChangedEventArgs &)>;
 
-		TaskCompletedEventHandler _taskCompleted;
-		ProgressChangedEventHandler _progressChanged;
+	private:
+		std::thread thread_;
+		Task task_;
+		std::mutex mutex_;
+		std::condition_variable condition_;
+		std::atomic<bool> running_{ false };
+		bool stop_{ false };
+		bool cancellation_pending_{ false };
+		Progress progress_{ 0 };
+
+		TaskCompletedEventHandler task_completed_;
+		ProgressChangedEventHandler progress_changed_;
+
 	public:
+		BackGroundWorker(const std::string &name, Task task);
+		virtual ~BackGroundWorker();
 
-		BackGroundWorker(const std::string &name, Task task) : TaskBase(TaskType::BACK_GROUND, name), _task(task) {
-			_thread = std::thread([this] {
-				while (true) {
-					_Sleep();
-					if (_stop) {
-						break;
-					}
-					_OnDoTask();
-				}
-			});
-		}
+		BackGroundWorker(const BackGroundWorker &) = delete;
+		BackGroundWorker &operator=(const BackGroundWorker &) = delete;
+		BackGroundWorker(BackGroundWorker &&) = delete;
+		BackGroundWorker &operator=(BackGroundWorker &&) = delete;
 
-		virtual ~BackGroundWorker() {
-			{
-				std::lock_guard<std::mutex> lock(_mutex);
-				_stop = true;
-				_condition.notify_all();
-			}
-			if (_thread.joinable()) {
-				_thread.join();
-			}
-		}
+		void run_task_async();
+		bool cancellation_pending() const;
+		void cancel_async();
+		void reports_progress(Progress percent);
+		bool is_busy();
 
-		void RunTaskAsync() {
-			std::lock_guard<std::mutex> lock(_mutex);
-			_running = true;
-			_condition.notify_all();
-		}
+		ReferenceProperty::FunctionSetter<TaskCompletedEventHandler> task_completed{
+			task_completed_
+		};
+		ReferenceProperty::FunctionSetter<ProgressChangedEventHandler> progress_changed{
+			progress_changed_
+		};
 
-		bool CancellationPending() {
-			return _cancellationPending;
-		}
-
-		void CancelAsync() {
-			_cancellationPending = true;
-		}
-
-		void ReportsProgress(Progress percent) {
-			ProgressChangedEventArgs args(percent);
-			if (_progressChanged) {
-				_progressChanged(*this, args);
-			}
-		}
-
-		bool IsBusy() {
-			return _running;
-		}
-
-		ReferenceProperty::FunctionSetter<TaskCompletedEventHandler> TaskCompleted{ _taskCompleted };
-		ReferenceProperty::FunctionSetter<ProgressChangedEventHandler> ProgressChanged{ _progressChanged };
 	private:
-		void _Sleep() {
-			std::unique_lock<std::mutex> lock(_mutex);
-			_condition.wait(lock, [this] {
-				return _running || _stop;
-			});
-		}
-
-		void _OnDoTask() {
-			DoTaskEventArgs args;
-			Framework::Error::Code error = Framework::Error::Code::Success;
-			try {
-				_task(*this, args);
-			} catch (const Framework::Exception &e) {
-				error = e.GetCode();
-			}
-			_OnTaskCompleted(args, error);
-		}
-
-		void _OnTaskCompleted(DoTaskEventArgs &doTaskEventArgs, Framework::Error::Code error) {
-			if (!_taskCompleted) {
-				return;
-			}
-			TaskCompletedEventArgs args{
-				doTaskEventArgs.GetCancel(),
-				doTaskEventArgs.GetResult(),
-				error
-			};
-			_taskCompleted(*this, args);
-
-			_cancellationPending = false;
-			_running = false;
-			_progress = 0;
-		}
+		void sleep();
+		void on_do_task();
+		void on_task_completed(DoTaskEventArgs &do_task_event_args, Framework::Error::Code error);
 	};
 } // namespace Framework::Task
+#endif // INCLUDE_TASK_BACKGROUNDWORKER_HPP

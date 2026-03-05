@@ -1,6 +1,10 @@
-set(TARGET SampleTest)
+set(TARGET SubProcessTest)
 
-add_executable(${TARGET} ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+add_executable(${TARGET}
+	${CMAKE_CURRENT_SOURCE_DIR}/StartInfoTest.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ProcessSpawnerTest.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ProcessTest.cpp
+)
 
 target_compile_features(${TARGET} PUBLIC cxx_std_20)
 
@@ -22,6 +26,6 @@ target_compile_options(${TARGET} PRIVATE
 	$<$<CONFIG:AddressSanitizer>:-fsanitize=address>
 )
 
-add_test(NAME ${TARGET} COMMAND ${TARGET}-googletest)
+add_test(NAME ${TARGET} COMMAND ${TARGET})
 
 enable_testing()

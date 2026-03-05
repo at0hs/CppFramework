@@ -1,0 +1,115 @@
+# ------------------------------------------
+# チェックルールの設定
+# ------------------------------------------
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  concurrency-*,
+  cppcoreguidelines-*,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-macro-usage,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-pro-type-vararg,
+  misc-*,
+  -misc-non-private-member-variables-in-classes,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard,
+  performance-*,
+  portability-*,
+  -portability-avoid-pragma-once,
+  readability-*,
+  -readability-braces-around-statements,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-function-cognitive-complexity
+
+# ------------------------------------------
+# 警告をエラーとして扱うか (CI環境などで有用)
+# ------------------------------------------
+# 致命的なバグやパフォーマンスの低下のみエラーにする場合は以下をアンコメントします。
+# WarningsAsErrors: 'bugprone-*,performance-*'
+
+# ------------------------------------------
+# 解析対象にするヘッダーファイル
+# ------------------------------------------
+# 標準ライブラリやサードパーティ（Boostなど）のヘッダーを検査対象から除外します。
+# プロジェクトのディレクトリ構成に合わせて変更してください。
+# 例: includeディレクトリ以下のヘッダーのみ検査するなら '^include/.*' とします。
+HeaderFilterRegex: '.*(src|include|tests)/.*'
+
+# ------------------------------------------
+# 詳細なオプション設定
+# ------------------------------------------
+CheckOptions:
+  # C++CoreGuidelines: メンバ変数の初期化に代入 '=' を許可するかどうか
+  modernize-use-default-member-init.UseAssignment: 1
+  
+  # auto を推奨する際の、元の型名の最小文字数（短すぎる型はautoにしない）
+  modernize-use-auto.MinTypeNameLength: 5
+
+  # ==========================================
+  # 命名規則のチェック
+  # ==========================================
+  
+  # 名前空間: キャメルケース（先頭大文字） 例: MyNamespace
+  readability-identifier-naming.NamespaceCase: CamelCase
+  
+  # クラス・構造体: キャメルケース（先頭大文字） 例: MyClass
+  readability-identifier-naming.ClassCase: CamelCase
+  readability-identifier-naming.StructCase: CamelCase
+  
+  # 関数名: スネークケース（free function・全アクセス指定のメソッド共通） 例: my_function
+  readability-identifier-naming.FunctionCase: lower_case
+  readability-identifier-naming.MethodCase: lower_case
+  readability-identifier-naming.PrivateMethodCase: lower_case
+  readability-identifier-naming.ProtectedMethodCase: lower_case
+
+  # 関数引数: スネークケース（const・非const共通） 例: my_param
+  readability-identifier-naming.ParameterCase: lower_case
+  readability-identifier-naming.ConstantParameterCase: lower_case
+
+  # 変数名: スネークケース 例: my_variable
+  readability-identifier-naming.VariableCase: lower_case
+
+  # パブリックメンバ変数: スネークケース 例: my_variable
+  readability-identifier-naming.PublicMemberCase: lower_case
+
+  # プライベートメンバ変数: スネークケース + 末尾アンダースコア 例: my_variable_
+  readability-identifier-naming.PrivateMemberCase: lower_case
+  readability-identifier-naming.PrivateMemberSuffix: '_'
+
+  # プロテクテッドメンバ変数: プライベートと同じ規則 例: my_variable_
+  readability-identifier-naming.ProtectedMemberCase: lower_case
+  readability-identifier-naming.ProtectedMemberSuffix: '_'
+
+  # クラス内 const/constexpr メンバ変数: 'k' プレフィックス + アッパーキャメルケース 例: kMyConst
+  # （ConstantMemberCase は非static const メンバ、ClassConstantCase は static const/constexpr メンバに適用）
+  readability-identifier-naming.ConstantMemberCase: CamelCase
+  readability-identifier-naming.ConstantMemberPrefix: 'k'
+  readability-identifier-naming.ClassConstantCase: CamelCase
+  readability-identifier-naming.ClassConstantPrefix: 'k'
+
+  # マクロ: アッパーケース 例: MY_MACRO
+  readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
+
+  # グローバル定数: 'k' プレフィックス + アッパーキャメルケース 例: kMyConstant
+  readability-identifier-naming.GlobalConstantCase: CamelCase
+  readability-identifier-naming.GlobalConstantPrefix: 'k'
+  readability-identifier-naming.GlobalConstexprVariableCase: CamelCase
+  readability-identifier-naming.GlobalConstexprVariablePrefix: 'k'
+
+  # 関数内 const/constexpr ローカル変数: スネークケース 例: my_const
+  readability-identifier-naming.LocalConstantCase: lower_case
+  readability-identifier-naming.LocalConstexprVariableCase: lower_case
+
+  # Enum型名: パスカルケース 例: MyEnum
+  readability-identifier-naming.EnumCase: CamelCase
+
+  # Enum定数: パスカルケース 例: MyValue
+  readability-identifier-naming.EnumConstantCase: CamelCase

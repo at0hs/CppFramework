@@ -1,17 +1,16 @@
-#pragma once
+#ifndef INCLUDE_UTILITY_HPP
+#define INCLUDE_UTILITY_HPP
 
 #include <fstream>
+#include <string>
 
 namespace Framework::Utility {
-	bool CreateFile(const std::string &name) {
+	inline bool create_file(const std::string &name) {
 		std::ofstream file(name);
-		bool opened = file.is_open();
+		bool const opened = file.is_open();
 		file.close();
 		return opened;
 	}
 } // namespace Framework::Utility
 
-namespace Framework {
-#define __Likely(x) __builtin_expect(!!(x), 1)
-#define __Unlikely(x) __builtin_expect(!!(x), 0)
-} // namespace Framework
+#endif // INCLUDE_UTILITY_HPP

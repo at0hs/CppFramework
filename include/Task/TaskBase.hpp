@@ -1,51 +1,42 @@
-#pragma once
+#ifndef INCLUDE_TASK_TASKBASE_HPP
+#define INCLUDE_TASK_TASKBASE_HPP
 
-#include <string_view>
-#include <filesystem>
 #include <thread>
-#include "Main/Workspace.hpp"
-#include "Main/Config.hpp"
 
 namespace Framework::Task {
 
-	enum class TaskType {
-		UNKNOWN = 0,
-		MESSAGE,
-		STATEMENT,
-		REAL_TIME,
-		BACK_GROUND,
-		TASK_POOL,
+	enum class TaskType : int8_t {
+		Unknown = 0,
+		Message,
+		Statement,
+		RealTime,
+		BackGround,
+		TaskPool,
 	};
 
-	struct TaskInfomation {
+	struct TaskInformation {
 		std::string name;
 		TaskType type;
-		std::thread::id threadId;
+		std::thread::id thread_id;
 	};
 
 	class TaskBase {
 	protected:
-		std::string _name;
-		TaskType _type { TaskType::UNKNOWN };
-		Main::Workspace _workspace;
-		std::thread _thread;
-	private:
-		static std::filesystem::path _BuildWorkspacePath(const std::string &name) {
-			std::filesystem::path path = Configuration::Address::Task();
-			return std::move(path.append(name));
-		}
+		std::string name_;
+		TaskType type_{ TaskType::Unknown };
+		std::thread thread_;
+
 	public:
-		TaskBase(TaskType type, const std::string &name)
-			: _name(name), _type{ type }, _workspace{ _BuildWorkspacePath(name) } {
-			_workspace.Create();
-		}
+		TaskBase(TaskType type, std::string name);
+		virtual ~TaskBase() = default;
 
-		~TaskBase() {
-			_workspace.Remove();
-		}
+		TaskBase(const TaskBase &) = delete;
+		TaskBase &operator=(const TaskBase &) = delete;
+		TaskBase(TaskBase &&) = delete;
+		TaskBase &operator=(TaskBase &&) = delete;
 
-		virtual TaskInfomation GetTaskInfomation() {
-			return { _name, _type, _thread.get_id() };
-		}
+		virtual TaskInformation get_task_information();
 	};
 } // namespace Framework::Task
+
+#endif // INCLUDE_TASK_TASKBASE_HPP

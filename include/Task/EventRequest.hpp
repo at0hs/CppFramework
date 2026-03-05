@@ -1,8 +1,10 @@
-#pragma once
+#ifndef INCLUDE_TASK_EVENTREQUEST_HPP
+#define INCLUDE_TASK_EVENTREQUEST_HPP
 
-#include <string>
 #include <any>
-#include "Exception/Exception.hpp"
+#include <cstdint>
+#include <string>
+#include <utility>
 
 namespace Framework::Task {
 
@@ -10,45 +12,64 @@ namespace Framework::Task {
 	class EventRequest {
 	public:
 		using Command = T;
+
 	private:
-		std::string _from;
-		Command _command { 0 };
-		std::any _payload;
+		std::string from_;
+		Command command_{ 0 };
+		std::any payload_;
+
 	public:
 		EventRequest() = default;
-		EventRequest(const std::string &from, Command command, const std::any &payload) :
-			_from(from), _command(command), _payload(payload) {}
-		EventRequest(const std::string &from, Command command, std::any &&payload) :
-			_from(from), _command(command), _payload(std::move(payload)) {}
-		EventRequest(const std::string &from, Command command) :
-			_from(from), _command(command) {}
-		EventRequest(const EventRequest &other) :
-			_from(other._from), _command(other._command) {
-			if (other.HasPayload())
-				_payload = other._payload;
+		EventRequest(std::string from, Command command, std::any payload)
+			: from_(std::move(from)),
+			  command_(command),
+			  payload_(std::move(payload)) {}
+		EventRequest(std::string from, Command command)
+			: from_(std::move(from)),
+			  command_(command) {}
+		EventRequest(const EventRequest &other) : from_(other.from_), command_(other.command_) {
+			if (other.has_payload()) {
+				payload_ = other.payload_;
+			}
 		}
-		EventRequest(EventRequest &&other) :
-			_from(std::move(other._from)), _command(other._command), _payload(std::move(other._payload)) {}
+		EventRequest(EventRequest &&other) noexcept
+			: from_(std::move(other.from_)),
+			  command_(other.command_),
+			  payload_(std::move(other.payload_)) {}
 
-		EventRequest &operator=(const EventRequest &other) {
+		~EventRequest() = default;
+
+		EventRequest &operator=(EventRequest &&other) noexcept {
 			if (this != &other) {
-				_from = other._from;
-				_command = other._command;
-				if (other.HasPayload())
-					_payload = other._payload;
+				from_ = std::move(other.from_);
+				command_ = other.command_;
+				payload_ = std::move(other.payload_);
 			}
 			return *this;
 		}
 
-		const std::string &GetFrom() const { return _from; }
+		EventRequest &operator=(const EventRequest &other) {
+			if (this != &other) {
+				from_ = other.from_;
+				command_ = other.command_;
+				if (other.has_payload()) {
+					payload_ = other.payload_;
+				}
+			}
+			return *this;
+		}
 
-		Command GetCommand() const { return _command; }
+		const std::string &get_from() const { return from_; }
 
-		bool HasPayload() const { return _payload.has_value(); }
-		const std::any &GetPayload() const { return _payload; }
+		Command get_command() const { return command_; }
+
+		bool has_payload() const { return payload_.has_value(); }
+		const std::any &get_payload() const { return payload_; }
 		template <typename U>
-		const U &GetPayloadAs() const {
-			return std::any_cast<const U&>(_payload);
+		const U &get_payload_as() const {
+			return std::any_cast<const U &>(payload_);
 		}
 	};
 } // namespace Framework::Task
+
+#endif // INCLUDE_TASK_EVENTREQUEST_HPP

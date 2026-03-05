@@ -1,121 +1,72 @@
-#pragma once
+#ifndef INCLUDE_SUBPROCESS_PROCESS_HPP
+#define INCLUDE_SUBPROCESS_PROCESS_HPP
 
+#include <atomic>
+#include <future>
 #include <unistd.h>
-#include <wait.h>
-#include <sys/resource.h>
-#include <chrono>
-#include <fstream>
-#include <thread>
 
-#include "Templates/Property.hpp"
-
-#include "SubProcess/StartInfo.hpp"
+#include "ProcessResult.hpp"
+#include "StartInfo.hpp"
 
 namespace Framework::SubProcess {
 	class Process {
 	public:
-		static constexpr int PROCESS_FAILED = -255;
+		static constexpr int kProcessFailed = -255;
+
 	private:
-		StartInfo _startInfo;
-		pid_t _id {-1};
-		int32_t _status {-1};
-		rusage _usage;
+		StartInfo start_info_;
+		pid_t id_{ -1 };
+		std::atomic<bool> has_exited_{ false };
 
 	public:
 		Process() = default;
-		Process(const StartInfo &startInfo) : _startInfo(startInfo) {}
+		explicit Process(StartInfo start_info);
 
-		static Process StartAsync(const StartInfo &startInfo) {
-			Process process{ startInfo };
-			process.StartAsync();
-			return process;
-		}
-		
-		static Process Start(const StartInfo &startInfo) {
-			Process process = StartAsync(startInfo);
-			process.Wait();
-			return process;
-		}
+		// コピー不可（プロセスハンドルは一意）
+		Process(const Process &) = delete;
+		Process &operator=(const Process &) = delete;
 
-		void Wait() {
-			if (HasExited()) {
-				return;
-			}
-			wait4(_id, &_status, 0, &_usage);
-		}
+		// ムーブ可
+		Process(Process &&other) noexcept;
+		Process &operator=(Process &&other) noexcept;
 
-		bool Wait(std::chrono::milliseconds milliSeconds) {
-			static constexpr auto INTERVAL = std::chrono::milliseconds(10).count();
-			if (HasExited()) {
-				return true;
-			}
-			uint64_t countDown;
-			if (milliSeconds.count() % INTERVAL == 0) {
-				countDown = milliSeconds.count() / INTERVAL;
-			} else {
-				countDown = milliSeconds.count() / INTERVAL + 1;
-			}
-			while (countDown--) {
-				if (wait4(_id, &_status, 0, &_usage) > 0) {
-					return true;
-				}
-				usleep(INTERVAL);
-			}
-			return false;
-		}
+		~Process();
 
-		void StartAsync() {
-			// メモリ空間を共有した子プロセスを生成
-			// process spawnerクラスが必要
-		}
+		// --- static ファクトリー ---
 
-		void Start() {
-			StartAsync();
-			Wait();
-		}
+		// 非同期でプロセスを起動し、future<ProcessResult> を返す
+		static std::future<ProcessResult> start_async(const StartInfo &start_info);
 
-		void Kill() {}
+		// プロセスを起動して終了まで待機し、ProcessResult を返す
+		static ProcessResult start(const StartInfo &start_info);
 
-		// properties
+		// --- インスタンスメソッド ---
 
-		int ExitCode();
+		// 非同期でプロセスを起動し、future<ProcessResult> を返す
+		std::future<ProcessResult> start_async();
 
-		bool HasExited();
+		// プロセスを起動して終了まで待機し、ProcessResult を返す
+		ProcessResult start();
 
-		pid_t Id();
+		// プロセスを強制終了する（SIGTERM 後に SIGKILL）
+		void kill();
 
-		auto StartTime();
+		// --- プロパティ ---
 
-		auto ExitTime();
+		pid_t id() const { return id_; }
 
-		std::ifstream StandardOutput();
+		bool has_exited() const { return has_exited_.load(); }
 
-		std::ifstream StandardError();
-
-		auto TotalProcessorTime();
-
-		auto UserProcessorTime();
-		// events
-		
-		// Templates::ReferenceProperty::FunctionSetter<ExitedEventHandler> Exited { _exitedHandler };
 	private:
-		static int ChildProcess(StartInfo *info) {
-			// リダイレクトの設定
-			// コマンドの実行
-			// ILauncherのインターフェースを用意して、実装はshellと普通のに分ける
-			return PROCESS_FAILED;
-		}
+		// 子プロセス内で呼び出す。ILauncher 経由でコマンドを exec する。
+		// stdout_fd / stderr_fd はパイプの書き込み端（-1 はリダイレクト無効）。
+		static int child_process(const StartInfo *info, int stdout_fd, int stderr_fd);
 
-		bool _Wait(int options) {
-			int status {-1};
-			rusage usage {0};
-
-			if (_id == wait4(_id, &status, options, &usage)) {
-				_status = status;
-				_usage = usage;
-				return true;
-			}
-			return false;
-		}
+		// 親プロセス側でパイプを読み込みながら wait4() し、ProcessResult を構築する
+		static ProcessResult collect_result(pid_t pid,
+											std::chrono::system_clock::time_point start_time,
+											int stdout_read_fd, int stderr_read_fd);
 	};
 } // namespace Framework::SubProcess
+
+#endif // INCLUDE_SUBPROCESS_PROCESS_HPP

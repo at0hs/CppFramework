@@ -1,5 +1,7 @@
-#pragma once
+#ifndef INCLUDE_TEMPLATES_ENUMCAST_HPP
+#define INCLUDE_TEMPLATES_ENUMCAST_HPP
 
+#include <cstddef>
 #include <type_traits>
 
 namespace Framework::Templates {
@@ -10,12 +12,11 @@ namespace Framework::Templates {
 		using Type = T;
 		using UnderlyingType = std::underlying_type_t<T>;
 
-		inline static constexpr Type ToEnum(UnderlyingType value) {
-			return static_cast<Type>(value);
-		}
+		static constexpr Type to_enum(UnderlyingType value) { return static_cast<Type>(value); }
 
-		inline static constexpr UnderlyingType ToUnderlying(Type value) {
+		static constexpr UnderlyingType to_underlying(Type value) {
 			return static_cast<UnderlyingType>(value);
 		}
 	};
 } // namespace Framework::Templates
+#endif // INCLUDE_TEMPLATES_ENUMCAST_HPP

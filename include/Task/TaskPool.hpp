@@ -1,4 +1,5 @@
-#pragma once
+#ifndef INCLUDE_TASK_TASKPOOL_HPP
+#define INCLUDE_TASK_TASKPOOL_HPP
 #include <sched.h>
 #include <unistd.h>
 #ifndef __GNU_SOURCE
@@ -6,12 +7,12 @@
 #include <pthread.h>
 #undef __GNU_SOURCE
 #endif
-#include <functional>
-#include <vector>
-#include <deque>
-#include <condition_variable>
-#include <mutex>
 #include <atomic>
+#include <condition_variable>
+#include <deque>
+#include <functional>
+#include <mutex>
+#include <vector>
 
 #include "Task/TaskBase.hpp"
 
@@ -19,102 +20,38 @@ namespace Framework::Task {
 
 	class TaskPool : public TaskBase {
 		using Task = std::function<void()>;
-	private:	
-		std::deque<std::function<void()>> _tasks{};
-		std::condition_variable _condition{};
-		std::mutex _mutex{};
-		std::vector<std::thread> _workers{};
-		bool _stop {false};
-		size_t _concurrency {0};
-		std::atomic<size_t> _runningTasks {0};
-
-	public:
-		TaskPool(const std::string &name, size_t concurrency = TaskPool::_GetConcurrency())
-			: TaskBase(TaskType::TASK_POOL, name), _concurrency{concurrency} {
-			_SpawnWorkers();
-		}
-
-		~TaskPool() {
-			Stop();
-		}
-
-		void Enqueue(Task task) {
-			std::lock_guard<std::mutex> lock(_mutex);
-			_tasks.emplace_back(std::move(task));
-			_condition.notify_all();
-		}
-
-		void Stop() {
-			_stop = true;
-			_condition.notify_all();
-			for (auto &worker : _workers) {
-				if (worker.joinable()) {
-					worker.join();
-				}
-			}
-			_workers.clear();
-		}
-
-		size_t Concurrency() const {
-			return _concurrency;
-		}
-
-		size_t CountWaitingTasks() {
-			std::lock_guard<std::mutex> lock(_mutex);
-			return _tasks.size();
-		}
-
-		size_t CountRunningTasks() {
-			return _runningTasks;
-		}
-
-		void ClearWaitingTasks() {
-			std::lock_guard<std::mutex> lock(_mutex);
-			_tasks.clear();
-		}
-
-		bool IsEmpty() {
-			std::lock_guard<std::mutex> lock(_mutex);
-			return _tasks.empty();
-		}
 
 	private:
-		void _SpawnWorkers() {
-			for (size_t i = 0; i < _concurrency; i++) {
-				_workers.emplace_back(std::thread {[this] {
-					while (true) {
-						auto task =_WaitForNewTask();
-						if (_stop && !task) {
-							return;
-						}
-						if (task) {
-							_runningTasks++;
-							task();
-							_runningTasks--;
-						}
-					}
-				}});
-			}
-		}
+		std::deque<Task> tasks_;
+		std::condition_variable condition_;
+		std::mutex mutex_;
+		std::vector<std::thread> workers_;
+		std::atomic<bool> stop_{ false };
+		size_t concurrency_{ 0 };
+		std::atomic<size_t> running_tasks_{ 0 };
 
-		Task _WaitForNewTask() {
-			std::unique_lock<std::mutex> lock(_mutex);
-			_condition.wait(lock, [this] {
-				return !_tasks.empty() || _stop;
-			});
-			if (_tasks.empty()) {
-				return {};
-			}
-			auto task = std::move(_tasks.front());
-			_tasks.pop_front();
-			return task;
-		}
+	public:
+		TaskPool(const std::string &name, size_t concurrency = TaskPool::get_concurrency());
+		~TaskPool();
 
-		static size_t _GetConcurrency() {
-			cpu_set_t cpu_set {0};
-			CPU_ZERO(&cpu_set);
-			pthread_getaffinity_np(pthread_self(), sizeof(cpu_set), &cpu_set);
-			return static_cast<size_t>(CPU_COUNT(&cpu_set));
-		}
+		TaskPool(const TaskPool &) = delete;
+		TaskPool &operator=(const TaskPool &) = delete;
+		TaskPool(TaskPool &&) = delete;
+		TaskPool &operator=(TaskPool &&) = delete;
+
+		void enqueue(Task task);
+		void stop();
+		size_t concurrency() const;
+		size_t count_waiting_tasks();
+		size_t count_running_tasks();
+		void clear_waiting_tasks();
+		bool is_empty();
+
+	private:
+		void spawn_workers();
+		Task wait_for_new_task();
+		static size_t get_concurrency();
 	};
 } // namespace Framework::Task
+
+#endif // INCLUDE_TASK_TASKPOOL_HPP

@@ -1,24 +1,36 @@
-#pragma once
+#ifndef INCLUDE_EXCEPTION_EXCEPTION_HPP
+#define INCLUDE_EXCEPTION_EXCEPTION_HPP
 
+#include "Error.hpp"
+#include <any>
+#include <optional>
 #include <stdexcept>
 #include <string>
-#include "Error.hpp"
 
 namespace Framework {
 	class Exception : public std::runtime_error {
-		Error::Code _code;
+		Error::Code code_;
+		std::optional<std::any> context_;
 
-		static std::string _BuildErrorMessage(const std::string &message, Error::Code code) {
-			return message + " (Error Code: " + std::to_string(static_cast<int>(code)) + ")";
-		}
+		static std::string build_error_message(const std::string &message, Error::Code code);
 
 	public:
-		Exception(const std::string &message, Error::Code code = Error::Code::Unknown)
-			: std::runtime_error(_BuildErrorMessage(message, code)), _code(code) {}
+		explicit Exception(const std::string &message, Error::Code code = Error::Code::Unknown);
+		Exception(const char *message, Error::Code code = Error::Code::Unknown);
+		Exception(const std::string &message, Error::Code code, std::any context);
 
-		Exception(const char *message, Error::Code code = Error::Code::Unknown)
-			: std::runtime_error(_BuildErrorMessage(message, code)), _code(code) {}
+		Error::Code get_code() const;
+		bool has_context() const noexcept;
 
-		Error::Code GetCode() const { return _code; }
+		template <typename T>
+		std::optional<T> get_context() const noexcept {
+			if (!context_) {
+				return std::nullopt;
+			}
+			const T *ptr = std::any_cast<T>(&*context_);
+			return ptr ? std::optional<T>{ *ptr } : std::nullopt;
+		}
 	};
 } // namespace Framework
+
+#endif // INCLUDE_EXCEPTION_EXCEPTION_HPP

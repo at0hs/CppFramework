@@ -1,4 +1,5 @@
-#pragma once
+#ifndef INCLUDE_TEMPLATES_PROPERTY_HPP
+#define INCLUDE_TEMPLATES_PROPERTY_HPP
 #include <functional>
 
 namespace Framework::Templates {
@@ -7,45 +8,51 @@ namespace Framework::Templates {
 		template <typename T>
 		class Base {
 		protected:
-			T &_value;
+			std::reference_wrapper<T> value_;
+
 		public:
-			Base(T &value) : _value(value) {}
-			virtual ~Base() {};
+			Base(T &value) : value_(value) {}
+			virtual ~Base() = default;
+
+			Base(const Base &) = default;
+			Base(Base &&) = default;
+			Base &operator=(const Base &) = default;
+			Base &operator=(Base &&) = default;
 		};
+
 	public:
 		template <typename T>
 		class DefaultGetter {
 		public:
-			static const T &Get(const T &value) {
-				return value;
-			}
+			static const T &get(const T &value) { return value; }
+			static const T &get(T &&) = delete;
 		};
+
 		template <typename T>
 		class DefaultSetter {
 		public:
-			static void Set(T &value, const T &newValue) {
-				value = newValue;
-			}
+			static void set(T &value, const T &new_value) { value = new_value; }
 		};
 
 		template <typename T, typename Getter = DefaultGetter<T>>
-		class ReadOnly : public Base<T> {
+		class ReadOnly : public Base<const T> {
 		public:
-			ReadOnly(T &value) : Base<T>(value) {}
-			ReadOnly(const T &value) : Base<T>(const_cast<T &>(value)) {}
+			ReadOnly(T &value) : Base<const T>(value) {}
+			ReadOnly(const T &value) : Base<const T>(value) {}
 
-			operator auto () const {
-				return Getter::Get(this->_value);
-			}
+			operator auto() const { return Getter::get(this->value_.get()); }
 		};
 
-		template <typename T, typename Getter = DefaultGetter<T>, typename Setter = DefaultSetter<T>>
+		template <typename T, typename Getter = DefaultGetter<T>,
+				  typename Setter = DefaultSetter<T>>
 		class Writable : public ReadOnly<T, Getter> {
+			std::reference_wrapper<T> mutable_ref_;
+
 		public:
-			Writable(T &value) : ReadOnly<T, Getter>(value) {}
+			Writable(T &value) : ReadOnly<T, Getter>(value), mutable_ref_(value) {}
 
 			auto &operator=(const T &value) {
-				Setter::Set(this->_value, value);
+				Setter::set(mutable_ref_.get(), value);
 				return *this;
 			}
 		};
@@ -59,7 +66,7 @@ namespace Framework::Templates {
 
 			template <typename F>
 			auto &operator=(F &&value) {
-				this->_value = std::forward<F>(value);
+				this->value_.get() = std::forward<F>(value);
 				return *this;
 			}
 		};
@@ -73,7 +80,7 @@ namespace Framework::Templates {
 
 			template <typename F>
 			auto &operator=(F &&value) {
-				this->_value = std::forward<F>(value);
+				this->value_.get() = std::forward<F>(value);
 				return *this;
 			}
 		};
@@ -85,30 +92,36 @@ namespace Framework::Templates {
 		Property() = delete;
 		~Property() = delete;
 
-		using SetterType = std::function<void(const T&)>;
+		Property(const Property &) = delete;
+		Property(Property &&) = delete;
+		Property &operator=(const Property &) = delete;
+		Property &operator=(Property &&) = delete;
+
+		using SetterType = std::function<void(const T &)>;
 		using GetterType = std::function<T()>;
 
 		class ReadOnly {
 		protected:
-			GetterType _getter;
-		public:
-			ReadOnly(GetterType getter) : _getter(getter) {}
+			GetterType getter_;
 
-			operator T() const {
-				return _getter();
-			}
+		public:
+			ReadOnly(GetterType getter) : getter_(getter) {}
+
+			operator T() const { return getter_(); }
 		};
 
 		class Writable : public ReadOnly {
 		protected:
-			SetterType _setter;
+			SetterType setter_;
+
 		public:
-			Writable(GetterType getter, SetterType setter) : ReadOnly(getter), _setter(setter) {}
+			Writable(GetterType getter, SetterType setter) : ReadOnly(getter), setter_(setter) {}
 
 			auto &operator=(const T &value) {
-				_setter(value);
+				setter_(value);
 				return *this;
 			}
 		};
 	};
 } // namespace Framework::Templates
+#endif // INCLUDE_TEMPLATES_PROPERTY_HPP

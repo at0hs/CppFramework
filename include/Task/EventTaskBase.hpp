@@ -1,16 +1,18 @@
-#pragma once
+#ifndef INCLUDE_TASK_EVENTTASKBASE_HPP
+#define INCLUDE_TASK_EVENTTASKBASE_HPP
 
-#include <memory>
-#include <thread>
+#include <chrono>
+#include <cstdint>
+#include <exception>
+#include <functional>
 #include <future>
-#include <vector>
+#include <memory>
 #include <string>
-
-#include "Templates/EnumBitset.hpp"
+#include <thread>
 
 #include "Task/EventRequest.hpp"
-#include "Task/interface/IMessageTask.hpp"
-#include "Task/interface/IEventAggregator.hpp"
+#include "Task/TaskBase.hpp"
+#include "Task/interface/IEventTask.hpp"
 
 #include "Message/IMessageQueue.hpp"
 #include "Message/MessageQueueFactory.hpp"
@@ -18,222 +20,229 @@
 namespace Framework::Task {
 	using namespace Framework;
 
-	template <typename T = EventRequest<>::Command>
-	class MessageEventArgs {
-		const EventRequest<T> *_content{ nullptr };
-	public:
-		MessageEventArgs(const EventRequest<T> *content) : _content(content) {}
-
-		const EventRequest<T> &GetRequest() const { return *_content; }
-	};
-
-	template <typename T = EventRequest<>::Command>
+	template <typename T, typename Aggregator>
 	class EventTaskBase : public IEventTask<T>, TaskBase {
-	public:
-		using EventAggregator =
-			IEventAggregator<typename EventRequest<T>::Command, const MessageEventArgs<T> &>;
+
 	private:
-		using _EventRequest = EventRequest<T>;
-		using Command = _EventRequest::Command;
-		static constexpr std::chrono::milliseconds WAIT_FOREVER = IEventTask<T>::WAIT_FOREVER;
+		using Request = EventRequest<T>;
+		using Command = Request::Command;
+		static constexpr std::chrono::milliseconds kWaitForever = IEventTask<T>::kWaitForever;
 
 		class Attribute final {
 		public:
-			enum Type : uint8_t {
-				NONE = 0,
-				INTERNAL,
-				EXTERNAL,
+			enum class Type : uint8_t {
+				None = 0,
+				Internal,
+				External,
 			};
+
 		private:
-			Type _type{ NONE };
+			Type type_{ Type::None };
+
 		public:
 			Attribute() = default;
-			Attribute(Type flags) : _type(flags) {}
-			bool IsInternal() const { return _type == INTERNAL; }
-			bool IsExternal() const { return _type == EXTERNAL; }
+			Attribute(Type flags) : type_(flags) {}
+			bool is_internal() const { return type_ == Type::Internal; }
+			bool is_external() const { return type_ == Type::External; }
+
+			static Attribute internal() { return Attribute(Type::Internal); }
+			static Attribute external() { return Attribute(Type::External); }
 		};
 
 		class Response final {
-			std::promise<bool> _response;
-		public:
-			std::future<bool> GetFuture() { return _response.get_future(); }
+			std::promise<bool> response_;
 
-			void Set(bool response) { _response.set_value(response); }
-			void HandleException() { _response.set_exception(std::current_exception()); }
+		public:
+			std::future<bool> get_future() { return response_.get_future(); }
+
+			void set(bool response) { response_.set_value(response); }
+			void handle_exception() { response_.set_exception(std::current_exception()); }
 		};
 
 		class InternalCommands final {
 		public:
-			static constexpr EventRequest<>::Command START = 0;
-			static constexpr EventRequest<>::Command STOP = 1;
+			static constexpr EventRequest<>::Command kStart = 0;
+			static constexpr EventRequest<>::Command kStop = 1;
 		};
 
 		class MessageContent {
-			Attribute _attribute{};
-			_EventRequest _request{};
-			std::shared_ptr<Response> _response{ nullptr };
+			Attribute attribute_{};
+			Request request_{};
+			std::shared_ptr<Response> response_{ nullptr };
+
 		public:
 			MessageContent() = default;
-			MessageContent(Attribute attribute, const _EventRequest &request, std::shared_ptr<Response> response = nullptr) :
-				_attribute(attribute), _request(request), _response(response) {}
-			MessageContent(Attribute attribute, _EventRequest &&request, std::shared_ptr<Response> response = nullptr) :
-				_attribute(attribute), _request(std::move(request)), _response(response) {}
+			MessageContent(Attribute attribute, const Request &request,
+						   std::shared_ptr<Response> response = nullptr)
+				: attribute_(attribute),
+				  request_(request),
+				  response_(response) {}
+			MessageContent(Attribute attribute, Request &&request,
+						   std::shared_ptr<Response> response = nullptr)
+				: attribute_(attribute),
+				  request_(std::move(request)),
+				  response_(response) {}
 
-			const auto &GetAttribute() const { return _attribute; }
-			const auto &GetRequest() const { return _request; }
-			auto &GetResponseBuffer() const { return _response; }
-			bool IsResponseRequired() const { return _response != nullptr; }
+			const auto &get_attribute() const { return attribute_; }
+			const auto &get_request() const { return request_; }
+			auto &get_response_buffer() const { return response_; }
+			bool is_response_required() const { return response_ != nullptr; }
 		};
 
 		using MessageQueue = Message::IMessageQueue<MessageContent>;
 
 		class Sender {
-			std::weak_ptr<MessageQueue> _messageQueue;
-			std::shared_ptr<Response> _response{ nullptr };
-			bool sent{ false };
-		public:
-			Sender(const std::shared_ptr<MessageQueue> &messageQueue, bool needResponse = false) :
-				_messageQueue(messageQueue), _response(needResponse ? std::make_shared<Response>() : nullptr) {}
+			std::weak_ptr<MessageQueue> message_queue_;
+			std::shared_ptr<Response> response_{ nullptr };
+			bool sent_{ false };
 
-			void Send(Attribute attribute, const _EventRequest &request) {
-				if (auto messageQueue = _messageQueue.lock()) {
-					messageQueue->Send({ attribute, request, _response });
-					sent = true;
+		public:
+			Sender(const std::shared_ptr<MessageQueue> &message_queue, bool need_response = false)
+				: message_queue_(message_queue),
+				  response_(need_response ? std::make_shared<Response>() : nullptr) {}
+
+			void send(Attribute attribute, const Request &request) {
+				if (auto message_queue = message_queue_.lock()) {
+					message_queue->send({ attribute, request, response_ });
+					sent_ = true;
 				}
 			}
 
-			bool WaitForResponse(std::chrono::milliseconds timeoutMsec = WAIT_FOREVER) {
-				if (!_response || !sent) {
+			bool wait_for_response(std::chrono::milliseconds timeout_msec = kWaitForever) {
+				if (!response_ || !sent_) {
 					return false;
 				}
-				std::future<bool> future = _response->GetFuture();
-				if (timeoutMsec == WAIT_FOREVER) {
+				std::future<bool> future = response_->get_future();
+				if (timeout_msec == kWaitForever) {
 					future.wait();
 				} else {
-					if (future.wait_for(timeoutMsec) == std::future_status::timeout) {
+					if (future.wait_for(timeout_msec) == std::future_status::timeout) {
 						return false;
 					}
 				}
 				return future.get();
 			}
-		private:
 		};
 
-		EventAggregator *const _eventAggregator{ nullptr };
-		std::shared_ptr<MessageQueue> _messageQueue;
+		Aggregator aggregator_;
+		std::shared_ptr<MessageQueue> message_queue_;
 
-		std::function<void()> _onStart;
-		std::function<void()> _onFinish;
-		bool stop = false;
+		std::function<void()> on_start_;
+		std::function<void()> on_finish_;
+		bool stopped_ = false;
+
 	public:
-		EventTaskBase(TaskType type, const std::string &name,
-			EventAggregator *eventAggregator) :
-			TaskBase(type, name), _eventAggregator(eventAggregator),
-			_messageQueue(Message::MessageQueueFactory::Create<MessageContent>()) {
-
-			_thread = std::thread([this]() {
-				_Mainloop();
-			});
+		template <typename... AggregatorArgs>
+		EventTaskBase(TaskType type, const std::string &name, AggregatorArgs &&...args)
+			: TaskBase(type, name),
+			  aggregator_(std::forward<AggregatorArgs>(args)...),
+			  message_queue_(Message::MessageQueueFactory::create<MessageContent>()) {
+			thread_ = std::thread([this]() { main_loop(); }); // NOLINT(cppcoreguidelines-prefer-member-initializer)
 		}
 
-		~EventTaskBase() {
-			Stop();
+		~EventTaskBase() { stop(); }
+
+		EventTaskBase(const EventTaskBase &) = delete;
+		EventTaskBase &operator=(const EventTaskBase &) = delete;
+		EventTaskBase(EventTaskBase &&) = delete;
+		EventTaskBase &operator=(EventTaskBase &&) = delete;
+
+		void start() override {
+			Sender sender{ message_queue_, true };
+			sender.send(Attribute::internal(),
+						Request{ "", static_cast<T>(InternalCommands::kStart) });
+			sender.wait_for_response();
 		}
 
-		void Start() override {
-			Sender sender{ _messageQueue, true };
-			sender.Send(Attribute::INTERNAL, _EventRequest{
-				"", static_cast<T>(InternalCommands::START) });
-			sender.WaitForResponse();
-		}
-
-		void Stop() override {
-			if (!IsRunning()) {
+		void stop() override {
+			if (!is_running()) {
 				return;
 			}
-			Sender sender{ _messageQueue, true };
-			sender.Send(Attribute::INTERNAL, _EventRequest{
-				"", static_cast<T>(InternalCommands::STOP) });
-			sender.WaitForResponse();
-			_thread.join();
+			Sender sender{ message_queue_, true };
+			sender.send(Attribute::internal(),
+						Request{ "", static_cast<T>(InternalCommands::kStop) });
+			sender.wait_for_response();
+			thread_.join();
 		}
 
-		void SendEvent(_EventRequest &&request) override {
-			Sender sender(_messageQueue, false);
-			sender.Send(Attribute::EXTERNAL, std::move(request));
+		void send_event(Request &&request) override {
+			Sender sender(message_queue_, false);
+			sender.send(Attribute::external(), std::move(request));
 		}
 
-		void SendEvent(const _EventRequest &request) override {
-			Sender sender(_messageQueue, false);
-			sender.Send(Attribute::EXTERNAL, request);
+		void send_event(const Request &request) override {
+			Sender sender(message_queue_, false);
+			sender.send(Attribute::external(), request);
 		}
 
-		bool RpcEvent(_EventRequest &&request, std::chrono::milliseconds timeoutMsec = WAIT_FOREVER) override {
-			Sender sender(_messageQueue, true);
-			sender.Send(Attribute::EXTERNAL, std::move(request));
-			return sender.WaitForResponse(timeoutMsec);
+		bool rpc_event(Request &&request,
+					   std::chrono::milliseconds timeout_msec = kWaitForever) override {
+			Sender sender(message_queue_, true);
+			sender.send(Attribute::external(), std::move(request));
+			return sender.wait_for_response(timeout_msec);
 		}
 
-		bool RpcEvent(const _EventRequest &request, std::chrono::milliseconds timeoutMsec = WAIT_FOREVER) override {
-			Sender sender(_messageQueue, true);
-			sender.Send(Attribute::EXTERNAL, request);
-			return sender.WaitForResponse(timeoutMsec);
+		bool rpc_event(const Request &request,
+					   std::chrono::milliseconds timeout_msec = kWaitForever) override {
+			Sender sender(message_queue_, true);
+			sender.send(Attribute::external(), request);
+			return sender.wait_for_response(timeout_msec);
 		}
 
-		void SetOnStart(const std::function<void()> &onStart) {
-			_onStart = onStart;
-		}
+		void set_on_start(const std::function<void()> &on_start) { on_start_ = on_start; }
 
-		void SetOnFinish(const std::function<void()> &onFinish) {
-			_onFinish = onFinish;
-		}
+		void set_on_finish(const std::function<void()> &on_finish) { on_finish_ = on_finish; }
 
-		bool IsRunning() const noexcept {
-			return _thread.joinable();
-		}
+		bool is_running() const noexcept { return thread_.joinable(); }
+
+	protected:
+		Aggregator &aggregator() { return aggregator_; }
+		const Aggregator &aggregator() const { return aggregator_; }
+
 	private:
-		void _Mainloop() {
-			while (!stop) {
-				MessageContent content = _messageQueue->Receive();
+		void main_loop() {
+			while (!stopped_) {
+				MessageContent content = message_queue_->receive();
 				try {
-					bool responseValue = true;
-					if (content.GetAttribute().IsInternal()) {
-						_ProcessInternalCommand(content.GetRequest());
+					bool response_value = true;
+					if (content.get_attribute().is_internal()) {
+						process_internal_command(content.get_request());
 					} else {
-						responseValue = _ProcessEvent(content.GetRequest());
+						response_value = process_event(content.get_request());
 					}
-					if (content.IsResponseRequired()) {
-						content.GetResponseBuffer()->Set(responseValue);
+					if (content.is_response_required()) {
+						content.get_response_buffer()->set(response_value);
 					}
 				} catch (...) {
-					if (content.IsResponseRequired()) {
-						content.GetResponseBuffer()->HandleException();
+					if (content.is_response_required()) {
+						content.get_response_buffer()->handle_exception();
 					}
 				}
 			}
-			if (_onFinish) _onFinish();
+			if (on_finish_) {
+				on_finish_();
+			}
 		}
 
-		void _ProcessInternalCommand(const _EventRequest &request) {
-			EventRequest<>::Command command =
-				static_cast<EventRequest<>::Command>(request.GetCommand());
+		void process_internal_command(const Request &request) {
+			auto command = static_cast<EventRequest<>::Command>(request.get_command());
 			switch (command) {
-			case InternalCommands::START:
-				if (_onStart) _onStart();
+			case InternalCommands::kStart:
+				if (on_start_) {
+					on_start_();
+				}
 				break;
-			case InternalCommands::STOP:
-				stop = true;
+			case InternalCommands::kStop:
+				stopped_ = true;
 				break;
 			default:
 				break;
 			}
 		}
 
-		bool _ProcessEvent(const _EventRequest &request) {
-			if (__Likely(_eventAggregator)) {
-				return _eventAggregator->Publish(request.GetCommand(), MessageEventArgs(&request));
-			}
-			return false;
+		bool process_event(const Request &request) {
+			return aggregator_.publish(request.get_command(), request);
 		}
 	};
 } // namespace Framework::Task
+#endif // INCLUDE_TASK_EVENTTASKBASE_HPP

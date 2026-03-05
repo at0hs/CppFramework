@@ -1,6 +1,9 @@
 set(TARGET MessageTest)
 
-add_executable(${TARGET} ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+add_executable(${TARGET}
+	${CMAKE_CURRENT_SOURCE_DIR}/SynchronizedDequeTest.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/PosixMessageQueueTest.cpp
+)
 
 target_compile_features(${TARGET} PUBLIC cxx_std_20)
 
@@ -22,6 +25,6 @@ target_compile_options(${TARGET} PRIVATE
 	$<$<CONFIG:AddressSanitizer>:-fsanitize=address>
 )
 
-add_test(NAME ${TARGET} COMMAND ${TARGET}-googletest)
+add_test(NAME ${TARGET} COMMAND ${TARGET})
 
 enable_testing()

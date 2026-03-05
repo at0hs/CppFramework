@@ -10,9 +10,9 @@ set(TESTING_FRAMEWORK
 	GTest::gtest_main
 )
 
-add_subdirectory(SampleTest)
 add_subdirectory(TimerTest)
 add_subdirectory(SyncTest)
 add_subdirectory(MessageTest)
 add_subdirectory(TemplatesTest)
 add_subdirectory(TaskTest)
+add_subdirectory(SubProcessTest)

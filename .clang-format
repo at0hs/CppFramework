@@ -1,0 +1,68 @@
+# Braces on the same line, Namespace indented, No short-line folding
+Language:        Cpp
+BasedOnStyle:    LLVM
+
+# インデント設定
+UseTab:          Always
+IndentWidth:     4
+TabWidth:        4
+
+# 名前空間内のインデントを有効化
+NamespaceIndentation: All
+
+# 波括弧のスタイル: 同じ行 (Attach)
+BreakBeforeBraces: Attach
+
+# --- 波括弧の内側にスペースを入れる設定 ---
+# { value } のように前後にスペースを挿入します
+Cpp11BracedListStyle: false 
+Standard: Latest
+
+# template と class/関数を必ず別行にする
+AlwaysBreakTemplateDeclarations: Yes
+
+# --- 短い構文を1行にまとめない設定 ---
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortLambdasOnASingleLine: Inline
+
+# --- {} を強制する設定 ---
+# clang-format 15以降で利用可能。短いif/forにも必ず波括弧を付けます。
+RemoveBracesLLVM: false
+InsertBraces: true
+
+# 引数・要素の整列
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignOperands:   true
+AlignTrailingComments: true
+
+# ポインタ・参照の寄せ (右寄せ: char *ptr)
+PointerAlignment: Right
+
+# スペースの配置
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesInAngles:  false
+SpacesInContainerLiterals: false
+SpacesInCStyleCastParentheses: false
+# 括弧内のスペース設定
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+
+# アクセス修飾子 (public: 等) のインデント (左端へ)
+AccessModifierOffset: -4
+
+# コンストラクタ初期化子リスト
+ConstructorInitializerIndentWidth: 4
+BreakConstructorInitializers: BeforeColon
+PackConstructorInitializers: CurrentLine
+
+# 関数・クラス定義ブロック間に空行を強制 (clang-format 14以降)
+SeparateDefinitionBlocks: Always
+
+# その他
+ColumnLimit:     100

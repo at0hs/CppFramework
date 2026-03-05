@@ -1,73 +1,92 @@
-#pragma once
+#ifndef INCLUDE_TASK_STATEMACHINE_HPP
+#define INCLUDE_TASK_STATEMACHINE_HPP
 
-#include <map>
-#include <initializer_list>
 #include <atomic>
-#include <type_traits>
 #include <functional>
+#include <map>
+#include <stdexcept>
+#include <utility>
 
-#include "Task/EventTaskBase.hpp"
+#include "Exception/Error.hpp"
+#include "Exception/Exception.hpp"
+#include "Task/EventRequest.hpp"
 #include "Task/MessageEventAggregator.hpp"
-
-#include "Templates/Property.hpp"
 
 namespace Framework::Task {
 
-	template <typename T = EventRequest<>::Command,
-		typename U = MessageEventAggregator<>::State>
-	class StateMachine : public EventTaskBase<T>::EventAggregator {
+	template <typename T = EventRequest<>::Command, typename U = MessageEventAggregator<>::State>
+	class StateMachine {
 	public:
 		using Command = T;
 		using State = U;
 		using EventAggregator = MessageEventAggregator<Command, State>;
-		using StateTable =
-			std::map<State, EventAggregator>;
-		using StateEvents =
-			std::pair<const State, EventAggregator>;
+		using EventHandler = typename EventAggregator::EventHandler;
+		using StateTable = std::map<State, EventAggregator>;
+		using StateEvents = std::pair<const State, EventAggregator>;
 
 	private:
-		static constexpr State UNDEFINED_STATE = static_cast<State>(-1);
+		static constexpr State kUndefinedState = static_cast<State>(-1);
 		class StateInfo {
 		public:
-			State state { UNDEFINED_STATE };
-			EventAggregator *aggregator { nullptr };
+			State state{ kUndefinedState };
+			EventAggregator *aggregator{ nullptr };
 			StateInfo() = default;
-			StateInfo(State state, EventAggregator &aggregator) : state(state), aggregator(&aggregator) {}
+			StateInfo(State state, EventAggregator &aggregator)
+				: state(state),
+				  aggregator(&aggregator) {}
 		};
-		StateTable _table;
-		std::atomic<StateInfo> _current;
+		StateTable table_;
+		std::atomic<StateInfo> current_;
+
 	public:
-		StateMachine(const StateTable &table, State initialState) : _table(table) {
-			SetState(initialState);
+		// テーブルを直接渡す既存コンストラクタ
+		StateMachine(const StateTable &table, State initial_state) : table_(table) {
+			set_state(initial_state);
 		}
 
-		void SetState(State newState) {
-			State currentState = _current.load().state;
-			if (currentState == newState) {
-				return;
-			}
+		// ビルダー API 用デフォルトコンストラクタ（add() → init() の順で使用）
+		StateMachine() = default;
+
+		// ビルダー API: 遷移を1つ登録する
+		void add(State from, Command cmd, EventHandler handler,
+				 State next_state = EventAggregator::kKeepState) {
+			table_[from].add(cmd, handler, next_state);
+		}
+
+		// ビルダー API: 初期状態を確定する（start() 前に必ず呼ぶ）
+		void init(State initial_state) { set_state(initial_state); }
+
+		void set_state(State new_state) {
+			State current_state = current_.load().state;
 			try {
-				_current.store({ newState, _table.at(newState) });
-				if (stateChanged) {
-					stateChanged(currentState, newState);
+				current_.store({ new_state, table_.at(new_state) });
+				if (state_changed) {
+					state_changed(current_state, new_state);
 				}
 			} catch (const std::out_of_range &e) {
 				throw Exception("State not found", Error::Code::OutOfRange);
 			}
 		}
 
-		State GetState() const { return _current.load().state; }
+		State get_state() const { return current_.load().state; }
 
-		bool Publish(EventRequest<Command>::Command command, const MessageEventArgs<Command> &args) override {
-			auto current = _current.load();
-			const bool returnValue = current.aggregator->Publish(command, args);
-			State nextState = current.aggregator->GetNextState(command);
-			if ((nextState != MessageEventAggregator<Command, State>::KEEP_STATE) && returnValue) {
-				SetState(nextState);
+		bool publish(Command command, const EventRequest<Command> &req) {
+			auto current = current_.load();
+			if (!current.aggregator) {
+				throw Exception("State machine not initialized", Error::Code::InvalidOperation);
 			}
-			return returnValue;
+			if (!current.aggregator->publish(command, req)) {
+				return  false;
+			}
+			State next_state = current.aggregator->get_next_state(command);
+			if ((next_state != EventAggregator::kKeepState) && (current_.load().state != next_state)) {
+				set_state(next_state);
+			}
+			return true;
 		}
-		std::function<void(State, State)> stateChanged;
+
+		std::function<void(State, State)> state_changed;
 	};
 
 } // namespace Framework::Task
+#endif // INCLUDE_TASK_STATEMACHINE_HPP

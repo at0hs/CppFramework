@@ -1,33 +1,34 @@
-#pragma once
+#ifndef INCLUDE_TEMPLATES_ENUMBITSET_HPP
+#define INCLUDE_TEMPLATES_ENUMBITSET_HPP
 
+#include "EnumCast.hpp"
 #include <bitset>
 #include <cstddef>
+#include <initializer_list>
 #include <string>
 #include <type_traits>
-#include "utility.hpp"
-#include "Templates/EnumCast.hpp"
 
 namespace Framework::Templates {
 
-	template <typename T,
-		std::size_t MaxBits = sizeof(std::underlying_type_t<T>) * 8,
-		typename std::enable_if_t<std::is_enum_v<T> &&
-		MaxBits <= (sizeof(std::underlying_type_t<T>) * 8),
-		nullptr_t> = nullptr>
+	template <typename T, std::size_t MaxBits = sizeof(std::underlying_type_t<T>) * 8,
+			  typename std::enable_if_t<std::is_enum_v<T> &&
+											MaxBits <= (sizeof(std::underlying_type_t<T>) * 8),
+										std::nullptr_t> = nullptr>
 	class EnumBitset : std::bitset<MaxBits> {
 
 		using _base = std::bitset<MaxBits>;
+
 	public:
 		using EnumCast = class EnumCast<T>;
 		using Type = typename EnumCast::Type;
 		using UnderlyingType = typename EnumCast::UnderlyingType;
 
-		static constexpr size_t _MaxBits = MaxBits;
+		static constexpr size_t kMaxBits = MaxBits;
 
 		constexpr EnumBitset() noexcept : _base() {}
 
-		constexpr EnumBitset(std::initializer_list<Type> init) noexcept :
-			_base(EnumCast::ToUnderlying(OrAll(init))) {}
+		constexpr EnumBitset(std::initializer_list<Type> init) noexcept
+			: _base(EnumCast::to_underlying(or_all(init))) {}
 
 		constexpr EnumBitset(Type value) noexcept : EnumBitset({ value }) {}
 
@@ -46,111 +47,92 @@ namespace Framework::Templates {
 			return *this;
 		}
 
-		EnumBitset &Set() noexcept {
+		EnumBitset &set() noexcept {
 			_base::set();
 			return *this;
 		}
 
-		EnumBitset &Set(Type _enum, bool value = true) {
-			if (__Unlikely(EnumCast::ToUnderlying(_enum) == 0)) {
+		EnumBitset &set(Type e, bool value = true) {
+			if (EnumCast::to_underlying(e) == 0) [[unlikely]] {
 				return *this;
 			}
-			_base::set(_ToBitPosition(_enum), value);
+			_base::set(to_bit_position(e), value);
 			return *this;
 		}
 
-		EnumBitset &Reset() noexcept {
+		EnumBitset &reset() noexcept {
 			_base::reset();
 			return *this;
 		}
 
-		EnumBitset &Reset(Type _value) {
-			if (__Unlikely(EnumCast::ToUnderlying(_value) == 0)) {
+		EnumBitset &reset(Type value) {
+			if (EnumCast::to_underlying(value) == 0) [[unlikely]] {
 				return *this;
 			}
-			_base::reset(_ToBitPosition(_value));
+			_base::reset(to_bit_position(value));
 			return *this;
 		}
 
-		EnumBitset operator~() const noexcept {
-			return _base::operator~();
-		}
+		EnumBitset operator~() const noexcept { return _base::operator~(); }
 
-		EnumBitset &Flip() noexcept {
+		EnumBitset &flip() noexcept {
 			_base::flip();
 			return *this;
 		}
 
-		EnumBitset &Flip(Type value) {
-			if (__Unlikely(EnumCast::ToUnderlying(value) == 0)) {
+		EnumBitset &flip(Type value) {
+			if (EnumCast::to_underlying(value) == 0) [[unlikely]] {
 				return *this;
 			}
-			_base::flip(_ToBitPosition(value));
+			_base::flip(to_bit_position(value));
 			return *this;
 		}
 
-		bool operator[](UnderlyingType position) const {
-			return _base::operator[](position);
-		}
+		bool operator[](UnderlyingType position) const { return _base::operator[](position); }
 
-		size_t Count() const noexcept {
-			return _base::count();
-		}
+		size_t count() const noexcept { return _base::count(); }
 
-		bool Test(Type value) const {
-			if (__Unlikely(EnumCast::ToUnderlying(value) == 0)) {
+		bool test(Type value) const {
+			if (EnumCast::to_underlying(value) == 0) [[unlikely]] {
 				return false;
 			}
-			return Test(_ToBitPosition(value));
+			return test(to_bit_position(value));
 		}
 
-		bool Test(UnderlyingType position) const {
-			return _base::test(position);
-		}
+		bool test(UnderlyingType position) const { return _base::test(position); }
 
-		bool All() const noexcept {
-			return _base::all();
-		}
+		bool all() const noexcept { return _base::all(); }
 
-		bool Any() const noexcept {
-			return _base::any();
-		}
+		bool any() const noexcept { return _base::any(); }
 
-		bool None() const noexcept {
-			return _base::none();
-		}
+		bool none() const noexcept { return _base::none(); }
 
-		bool operator==(const EnumBitset &other) const noexcept {
-			return _base::operator==(other);
-		}
+		bool operator==(const EnumBitset &other) const noexcept { return _base::operator==(other); }
 
 		bool operator!=(const EnumBitset &other) const noexcept {
 			return !_base::operator==(other);
 		}
 
-		inline UnderlyingType ToUnderlying() const noexcept {
-			return _base::to_ullong();
-		}
+		UnderlyingType to_underlying() const noexcept { return _base::to_ullong(); }
 
-		inline Type ToEnum() const {
-			return EnumCast::ToEnum(ToUnderlying());
-		}
+		Type to_enum() const { return EnumCast::to_enum(to_underlying()); }
 
-		std::string ToString() const {
-			return _base::to_string();
-		}
+		std::string to_string() const { return _base::to_string(); }
 
-		static constexpr Type OrAll(std::initializer_list<Type> init) noexcept {
-			UnderlyingType result = EnumCast::ToUnderlying(Type(0));
+		static constexpr Type or_all(std::initializer_list<Type> init) noexcept {
+			UnderlyingType result = EnumCast::to_underlying(Type(0));
 			for (Type value : init) {
-				UnderlyingType underlying = EnumCast::ToUnderlying(value);
+				UnderlyingType underlying = EnumCast::to_underlying(value);
 				result |= underlying;
 			}
-			return EnumCast::ToEnum(result);
+			return EnumCast::to_enum(result);
 		}
+
 	private:
-		inline static constexpr UnderlyingType _ToBitPosition(Type value) {
-			return __builtin_ctzll(EnumCast::ToUnderlying(value));
+		static constexpr UnderlyingType to_bit_position(Type value) {
+			return __builtin_ctzll(EnumCast::to_underlying(value));
 		}
 	};
 } // namespace Framework::Templates
+
+#endif // INCLUDE_TEMPLATES_ENUMBITSET_HPP

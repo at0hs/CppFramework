@@ -1,6 +1,13 @@
 set(TARGET TaskTest)
 
-add_executable(${TARGET} ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+add_executable(${TARGET}
+	${CMAKE_CURRENT_SOURCE_DIR}/EventAggregatorTest.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/MessageRequestTest.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/MessageTaskTest.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/StatementTask.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/BackGroundWorkerTest.cpp
+	# TaskPoolTest.cpp  # 無効
+)
 
 target_compile_features(${TARGET} PUBLIC cxx_std_20)
 
@@ -22,6 +29,6 @@ target_compile_options(${TARGET} PRIVATE
 	$<$<CONFIG:AddressSanitizer>:-fsanitize=address>
 )
 
-add_test(NAME ${TARGET} COMMAND ${TARGET}-googletest)
+add_test(NAME ${TARGET} COMMAND ${TARGET})
 
 enable_testing()

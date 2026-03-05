@@ -6,5 +6,7 @@ CMakeCache.txt
 memo.md
 sample/
 HTML/
-a.out
-test.cpp
+.idea/
+CLAUDE.md
+.cache/
+cmake-build-debug/

@@ -1,65 +1,33 @@
-#pragma once
+#ifndef INCLUDE_TIMER_HPP
+#define INCLUDE_TIMER_HPP
 
-#include <thread>
-#include <functional>
-#include <chrono>
 #include <atomic>
+#include <chrono>
+#include <functional>
+#include <thread>
 #include <vector>
-#include <iostream>
 
 class Timer {
-	std::chrono::milliseconds _time;
-	std::atomic<bool> _restart{ false };
-	std::atomic<bool> _active{ false };
-	std::thread _thread;
-	std::vector<std::function<void()>> _eventHandlers{};
+	std::chrono::milliseconds time_;
+	std::atomic<bool> restart_{ false };
+	std::atomic<bool> active_{ false };
+	std::thread thread_;
+	std::vector<std::function<void()>> event_handlers_;
 
 public:
-	explicit Timer(std::chrono::milliseconds time) : _time(time) {}
-	~Timer() {
-		_WaitForStop();
-	}
+	explicit Timer(std::chrono::milliseconds time) : time_(time) {}
+	~Timer();
 
-	void AutoRestart(bool val) {
-		_restart = val;
-	}
+	Timer(const Timer &) = delete;
+	Timer &operator=(const Timer &) = delete;
+	Timer(Timer &&) = delete;
+	Timer &operator=(Timer &&) = delete;
 
-	void AddListener(const std::function<void()> &f) {
-		_eventHandlers.emplace_back(f);
-	}
+	void auto_restart(bool val) { restart_ = val; }
+	void add_listener(const std::function<void()> &f) { event_handlers_.emplace_back(f); }
 
-	void Start() {
-		if (_active) {
-			return;
-		}
-		if (_thread.joinable()) {
-			_thread.join();
-		}
-		_active = true;
-		_thread = std::move(std::thread{ [&] {
-			std::vector<std::function<void()>> handlers {this->_eventHandlers};
-			do {
-				std::this_thread::sleep_for(this->_time);
-				if (!this->_active) {
-					break;
-				}
-				for (const auto &f : handlers) {
-					std::invoke(f);
-				}
-			} while (this->_restart);
-			this->_thread.detach();
-		} });
-	}
-
-	void Stop() {
-		if (_active)
-			_active = false;
-	}
-
-	void _WaitForStop() {
-		Stop();
-		if (_thread.joinable()) {
-			_thread.join();
-		}
-	}
+	void start();
+	void stop();
+	void wait_for_stop();
 };
+#endif // INCLUDE_TIMER_HPP

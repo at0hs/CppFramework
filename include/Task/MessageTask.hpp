@@ -1,39 +1,29 @@
-#pragma once
+#ifndef INCLUDE_TASK_MESSAGETASK_HPP
+#define INCLUDE_TASK_MESSAGETASK_HPP
 
 #include <string>
-#include <initializer_list>
 #include <type_traits>
 
 #include "Task/EventTaskBase.hpp"
 #include "Task/MessageEventAggregator.hpp"
+#include "Task/TaskBase.hpp"
 
 namespace Framework::Task {
 
-	template <typename _CommandType = MessageEventAggregator<>::Command,
-		std::enable_if_t<std::is_integral_v<_CommandType> || std::is_enum_v<_CommandType>,
-		nullptr_t> = nullptr>
-	class MessageTask : public EventTaskBase<_CommandType> {
-		using _Base = EventTaskBase<_CommandType>;
-	public:
-		using EventAggregator = MessageEventAggregator<_CommandType>;
-		using EventMap = EventAggregator::EventMap;
-	private:
-		EventAggregator _eventAggregator;
+	template <typename CommandType = MessageEventAggregator<>::Command,
+			  std::enable_if_t<std::is_integral_v<CommandType> || std::is_enum_v<CommandType>,
+							   std::nullptr_t> = nullptr>
+	class MessageTask : public EventTaskBase<CommandType, MessageEventAggregator<CommandType>> {
+		using Base = EventTaskBase<CommandType, MessageEventAggregator<CommandType>>;
 
-		// static constexpr EventAggregator::EventMap _Convert(const EventMap &events) {
-		// 	EventAggregator::EventMap result;
-		// 	for (const auto &event : events) {
-		// 		result.insert({
-		// 			static_cast<EventAggregator::Command>(event.first),
-		// 			EventAggregator::MessageInfo<>(event.second) });
-		// 	}
-		// 	return result;
-		// }
 	public:
-		// MessageTask(const std::string &name, const EventAggregator::EventMap &events) :
-		// 	_Base(TaskType::MESSAGE, name, &_eventAggregator), _eventAggregator(events) {}
+		using EventAggregator = MessageEventAggregator<CommandType>;
+		using EventMap = typename EventAggregator::EventMap;
 
-		MessageTask(const std::string &name, const EventMap &events) :
-			_Base(TaskType::MESSAGE, name, &_eventAggregator), _eventAggregator(events) {}
+		MessageTask(const std::string &name, const EventMap &events)
+			: Base(TaskType::Message, name, events) {}
 	};
+
 } // namespace Framework::Task
+
+#endif // INCLUDE_TASK_MESSAGETASK_HPP

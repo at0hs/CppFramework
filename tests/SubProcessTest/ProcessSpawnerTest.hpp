@@ -1,0 +1,8 @@
+#ifndef TESTS_SUBPROCESSTEST_PROCESSSPAWNERTEST_HPP
+#define TESTS_SUBPROCESSTEST_PROCESSSPAWNERTEST_HPP
+
+#include "gtest/gtest.h"
+
+class ProcessSpawnerTest : public ::testing::Test {};
+
+#endif // TESTS_SUBPROCESSTEST_PROCESSSPAWNERTEST_HPP

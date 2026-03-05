@@ -1,59 +1,45 @@
-#pragma once
+#ifndef INCLUDE_SUBPROCESS_STARTINFO_HPP
+#define INCLUDE_SUBPROCESS_STARTINFO_HPP
 
 #include <string>
 #include <vector>
 
 namespace Framework::SubProcess {
 	class StartInfo {
-		std::string _command;
-		std::vector<std::string> _arguments;
-		std::vector<std::string> _environments;
-		bool _redirectStandardOutput{ false };
-		bool _redirectStandardError{ false };
-		bool _useShell{ false };
+		std::string command_;
+		std::vector<std::string> arguments_;
+		std::vector<std::string> environments_;
+		bool redirect_standard_output_{ false };
+		bool redirect_standard_error_{ false };
+		bool use_shell_{ false };
+
 	public:
 		StartInfo() = default;
-		StartInfo(const std::string &command) : _command(command) {}
+		StartInfo(std::string command);
 
-		std::string &Command() {
-			return _command;
-		}
+		std::string &command();
+		const std::string &command() const;
 
-		std::vector<std::string> Arguments() {
-			return _arguments;
-		}
+		std::vector<std::string> &arguments();
+		const std::vector<std::string> &arguments() const;
 
-		std::vector<std::string> Environments() {
-			return _environments;
-		}
+		std::vector<std::string> &environments();
+		const std::vector<std::string> &environments() const;
 
-		bool &RedirectStandardOutput() {
-			return _redirectStandardOutput;
-		}
+		bool &redirect_standard_output();
+		bool redirect_standard_output() const;
 
-		bool &RedirectStandardError() {
-			return _redirectStandardError;
-		}
+		bool &redirect_standard_error();
+		bool redirect_standard_error() const;
 
-		bool &UseShell() {
-			return _useShell;
-		}
+		bool &use_shell();
+		bool use_shell() const;
 
-		std::string GetCommandLine() const {
-			std::string result = _command;
-			for (const auto &argument : _arguments) {
-				result += " " + argument;
-			}
-			return result;
-		}
+		std::string get_command_line() const;
 
-		const char **CStyleEnvironments() {
-			const char **result = new const char *[_environments.size() + 1];
-			for (size_t i = 0; i < _environments.size(); ++i) {
-				result[i] = _environments[i].c_str();
-			}
-			result[_environments.size()] = nullptr;
-			return result;
-		}
+		// nullptr 終端の const char* 配列を vector で返す（メモリ管理は vector が担う）
+		std::vector<const char *> c_style_environments() const;
 	};
 }; // namespace Framework::SubProcess
+
+#endif // INCLUDE_SUBPROCESS_STARTINFO_HPP
