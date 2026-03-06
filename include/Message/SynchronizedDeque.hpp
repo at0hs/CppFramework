@@ -10,7 +10,7 @@ namespace Framework::Message {
 	template <typename T>
 	class SynchronizedDeque : public IMessageQueue<T> {
 		static constexpr auto kWaitForever = std::chrono::milliseconds::zero();
-		std::mutex mutex_;
+		mutable std::mutex mutex_;
 		std::condition_variable condition_;
 		std::deque<T> queue_{};
 
@@ -56,12 +56,12 @@ namespace Framework::Message {
 			queue_.clear();
 		}
 
-		bool is_empty() override {
+		bool is_empty() const override {
 			std::lock_guard<std::mutex> lock(mutex_);
 			return queue_.empty();
 		}
 
-		std::size_t num_message() override {
+		std::size_t num_message() const override {
 			std::lock_guard<std::mutex> lock(mutex_);
 			return queue_.size();
 		}

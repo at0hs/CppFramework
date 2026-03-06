@@ -6,6 +6,7 @@ add_executable(${TARGET}
 	${CMAKE_CURRENT_SOURCE_DIR}/MessageTaskTest.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/StatementTask.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/BackGroundWorkerTest.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/EventTaskManagerTest.cpp
 	# TaskPoolTest.cpp  # 無効
 )
 

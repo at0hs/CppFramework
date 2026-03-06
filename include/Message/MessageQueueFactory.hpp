@@ -3,13 +3,14 @@
 
 #include "IMessageQueue.hpp"
 #include "SynchronizedDeque.hpp"
+#include <memory>
 
 namespace Framework::Message {
 	class MessageQueueFactory final {
 	public:
 		template <typename T>
-		static IMessageQueue<T> *create() {
-			return new SynchronizedDeque<T>();
+		static std::shared_ptr<IMessageQueue<T>> create() {
+			return std::make_shared<SynchronizedDeque<T>>();
 		}
 	};
 } // namespace Framework::Message

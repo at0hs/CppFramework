@@ -41,7 +41,7 @@ namespace Framework::Task {
 
 		public:
 			Attribute() = default;
-			Attribute(Type flags) : type_(flags) {}
+			explicit Attribute(Type flags) : type_(flags) {}
 			bool is_internal() const { return type_ == Type::Internal; }
 			bool is_external() const { return type_ == Type::External; }
 

@@ -6,16 +6,23 @@
 #include <utility>
 
 namespace Framework::Message {
-	template <class T, std::size_t T_SIZE = sizeof(T)>
+	template <class T>
 	class IMessageQueue {
 	public:
+		IMessageQueue() = default;
+		virtual ~IMessageQueue() = default;
+		IMessageQueue(const IMessageQueue &) = default;
+		IMessageQueue &operator=(const IMessageQueue &) = default;
+		IMessageQueue(IMessageQueue &&) = default;
+		IMessageQueue &operator=(IMessageQueue &&) = default;
+
 		virtual void send(const T &message) = 0;
 		virtual void send(T &&message) = 0;
 		virtual T receive() = 0;
 		virtual std::pair<bool, T> timed_receive(std::chrono::milliseconds milli_sec) = 0;
-		virtual bool is_empty() = 0;
+		virtual bool is_empty() const = 0;
 		virtual void clear() = 0;
-		virtual std::size_t num_message() = 0;
+		virtual std::size_t num_message() const = 0;
 	};
 } // namespace Framework::Message
 

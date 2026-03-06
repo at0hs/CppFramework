@@ -35,7 +35,7 @@ namespace Framework::Task {
 		TaskBase(TaskBase &&) = delete;
 		TaskBase &operator=(TaskBase &&) = delete;
 
-		virtual TaskInformation get_task_information();
+		virtual TaskInformation get_task_information() const;
 	};
 } // namespace Framework::Task
 

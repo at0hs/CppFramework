@@ -14,10 +14,9 @@
 namespace Framework::Task {
 	using namespace Framework::Templates;
 
-	template <typename T = StateMachine<>::State, typename U = StateMachine<>::Command,
-			  std::enable_if_t<(std::is_integral_v<T> || std::is_enum_v<T>) &&
-								   (std::is_integral_v<U> || std::is_enum_v<U>),
-							   std::nullptr_t> = nullptr>
+	template <typename T = StateMachine<>::State, typename U = StateMachine<>::Command>
+		requires(std::is_integral_v<T> || std::is_enum_v<T>) &&
+				(std::is_integral_v<U> || std::is_enum_v<U>)
 	class StatementTask : public EventTaskBase<U, StateMachine<U, T>> {
 		using Base = EventTaskBase<U, StateMachine<U, T>>;
 

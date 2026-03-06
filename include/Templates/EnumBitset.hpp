@@ -10,10 +10,8 @@
 
 namespace Framework::Templates {
 
-	template <typename T, std::size_t MaxBits = sizeof(std::underlying_type_t<T>) * 8,
-			  typename std::enable_if_t<std::is_enum_v<T> &&
-											MaxBits <= (sizeof(std::underlying_type_t<T>) * 8),
-										std::nullptr_t> = nullptr>
+	template <typename T, std::size_t MaxBits = sizeof(std::underlying_type_t<T>) * 8>
+		requires std::is_enum_v<T> && (MaxBits <= sizeof(std::underlying_type_t<T>) * 8)
 	class EnumBitset : std::bitset<MaxBits> {
 
 		using _base = std::bitset<MaxBits>;

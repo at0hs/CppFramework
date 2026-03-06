@@ -32,7 +32,7 @@ namespace Framework::Message {
 	 */
 	template <typename T>
 		requires std::is_trivially_copyable_v<T>
-	class PosixMessageQueue : public IMessageQueue<T, sizeof(T)> {
+	class PosixMessageQueue : public IMessageQueue<T> {
 		static constexpr std::size_t kMsgSize = sizeof(T);
 
 		mqd_t mqd_{ static_cast<mqd_t>(-1) };
@@ -134,7 +134,7 @@ namespace Framework::Message {
 			return { true, result };
 		}
 
-		bool is_empty() override { return num_message() == 0; }
+		bool is_empty() const override { return num_message() == 0; }
 
 		void clear() override {
 			// 一時的に O_NONBLOCK を設定してドレイン
@@ -149,7 +149,7 @@ namespace Framework::Message {
 			mq_setattr(mqd_, &old_attr, nullptr);
 		}
 
-		std::size_t num_message() override {
+		std::size_t num_message() const override {
 			struct mq_attr attr{};
 			if (mq_getattr(mqd_, &attr) < 0) {
 				throw Framework::SystemException("PosixMessageQueue::num_message failed", errno);

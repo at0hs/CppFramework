@@ -1,12 +1,12 @@
 #ifndef INCLUDE_TEMPLATES_ENUMCAST_HPP
 #define INCLUDE_TEMPLATES_ENUMCAST_HPP
 
-#include <cstddef>
 #include <type_traits>
 
 namespace Framework::Templates {
 
-	template <typename T, typename std::enable_if_t<std::is_enum_v<T>, std::nullptr_t> = nullptr>
+	template <typename T>
+		requires std::is_enum_v<T>
 	class EnumCast {
 	public:
 		using Type = T;

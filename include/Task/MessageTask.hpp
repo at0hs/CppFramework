@@ -10,9 +10,8 @@
 
 namespace Framework::Task {
 
-	template <typename CommandType = MessageEventAggregator<>::Command,
-			  std::enable_if_t<std::is_integral_v<CommandType> || std::is_enum_v<CommandType>,
-							   std::nullptr_t> = nullptr>
+	template <typename CommandType = MessageEventAggregator<>::Command>
+		requires(std::is_integral_v<CommandType> || std::is_enum_v<CommandType>)
 	class MessageTask : public EventTaskBase<CommandType, MessageEventAggregator<CommandType>> {
 		using Base = EventTaskBase<CommandType, MessageEventAggregator<CommandType>>;
 
