@@ -41,11 +41,15 @@ namespace Framework::Task {
 
 		public:
 			Attribute() = default;
+
 			explicit Attribute(Type flags) : type_(flags) {}
+
 			bool is_internal() const { return type_ == Type::Internal; }
+
 			bool is_external() const { return type_ == Type::External; }
 
 			static Attribute internal() { return Attribute(Type::Internal); }
+
 			static Attribute external() { return Attribute(Type::External); }
 		};
 
@@ -56,6 +60,7 @@ namespace Framework::Task {
 			std::future<bool> get_future() { return response_.get_future(); }
 
 			void set(bool response) { response_.set_value(response); }
+
 			void handle_exception() { response_.set_exception(std::current_exception()); }
 		};
 
@@ -72,11 +77,13 @@ namespace Framework::Task {
 
 		public:
 			MessageContent() = default;
+
 			MessageContent(Attribute attribute, const Request &request,
 						   std::shared_ptr<Response> response = nullptr)
 				: attribute_(attribute),
 				  request_(request),
 				  response_(response) {}
+
 			MessageContent(Attribute attribute, Request &&request,
 						   std::shared_ptr<Response> response = nullptr)
 				: attribute_(attribute),
@@ -84,8 +91,11 @@ namespace Framework::Task {
 				  response_(response) {}
 
 			const auto &get_attribute() const { return attribute_; }
+
 			const auto &get_request() const { return request_; }
+
 			auto &get_response_buffer() const { return response_; }
+
 			bool is_response_required() const { return response_ != nullptr; }
 		};
 
@@ -137,7 +147,8 @@ namespace Framework::Task {
 			: TaskBase(type, name),
 			  aggregator_(std::forward<AggregatorArgs>(args)...),
 			  message_queue_(Message::MessageQueueFactory::create<MessageContent>()) {
-			thread_ = std::thread([this]() { main_loop(); }); // NOLINT(cppcoreguidelines-prefer-member-initializer)
+			// NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
+			thread_ = std::thread([this]() { main_loop(); });
 		}
 
 		~EventTaskBase() { stop(); }
@@ -197,6 +208,7 @@ namespace Framework::Task {
 
 	protected:
 		Aggregator &aggregator() { return aggregator_; }
+
 		const Aggregator &aggregator() const { return aggregator_; }
 
 	private:

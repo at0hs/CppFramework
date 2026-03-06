@@ -10,7 +10,7 @@ TEST(TimerTest, Oneshot) {
 	timer.start();
 	std::this_thread::sleep_for(std::chrono::seconds(1));
 	timer.stop();
-	
+
 	EXPECT_EQ(1, counter);
 }
 

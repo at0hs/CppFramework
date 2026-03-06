@@ -17,11 +17,11 @@ using namespace Framework::SubProcess;
 // デタッチスレッドより先に破棄されるため use-after-free になる。
 // テストではインスタンスメソッドを直接呼ぶことで安全に動作させる。
 namespace {
-// Process インスタンスを生成して start() を呼び、結果を返す
-ProcessResult run_process(StartInfo info) {
-	Process proc{ std::move(info) };
-	return proc.start(); // proc.start_async().get() と等価、get() 後に has_exited_=true
-}
+	// Process インスタンスを生成して start() を呼び、結果を返す
+	ProcessResult run_process(StartInfo info) {
+		Process proc{ std::move(info) };
+		return proc.start(); // proc.start_async().get() と等価、get() 後に has_exited_=true
+	}
 } // namespace
 
 // =============================================================================

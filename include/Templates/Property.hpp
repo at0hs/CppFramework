@@ -12,6 +12,7 @@ namespace Framework::Templates {
 
 		public:
 			Base(T &value) : value_(value) {}
+
 			virtual ~Base() = default;
 
 			Base(const Base &) = default;
@@ -25,6 +26,7 @@ namespace Framework::Templates {
 		class DefaultGetter {
 		public:
 			static const T &get(const T &value) { return value; }
+
 			static const T &get(T &&) = delete;
 		};
 
@@ -38,6 +40,7 @@ namespace Framework::Templates {
 		class ReadOnly : public Base<const T> {
 		public:
 			ReadOnly(T &value) : Base<const T>(value) {}
+
 			ReadOnly(const T &value) : Base<const T>(value) {}
 
 			operator auto() const { return Getter::get(this->value_.get()); }

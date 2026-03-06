@@ -159,7 +159,7 @@ TEST_F(EventTaskManagerTest, SendEventToUnregistered) {
 	EventTaskManager<TestCmd> manager;
 
 	EXPECT_THROW(manager.send_event("nonexistent", { "sender", TestCmd::Cmd1 }),
-	             Framework::Exception);
+				 Framework::Exception);
 }
 
 // --- ルーティング: rpc_event ---
@@ -195,8 +195,8 @@ TEST_F(EventTaskManagerTest, RpcEventTimeout) {
 	manager.register_task("task1", task);
 
 	// SlowCmd は 600ms かかるので 200ms でタイムアウト
-	const bool result = manager.rpc_event("task1", { "sender", TestCmd::SlowCmd },
-	                                       std::chrono::milliseconds(200));
+	const bool result =
+		manager.rpc_event("task1", { "sender", TestCmd::SlowCmd }, std::chrono::milliseconds(200));
 	EXPECT_FALSE(result);
 
 	task->stop();
@@ -206,7 +206,7 @@ TEST_F(EventTaskManagerTest, RpcEventToUnregistered) {
 	EventTaskManager<TestCmd> manager;
 
 	EXPECT_THROW(manager.rpc_event("nonexistent", { "sender", TestCmd::Cmd1 }),
-	             Framework::Exception);
+				 Framework::Exception);
 }
 
 // --- 複数タスクの独立ルーティング ---

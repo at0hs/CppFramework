@@ -1,7 +1,7 @@
 #include "EventFlagTest.hpp"
 
 TEST_F(EventFlagTest, GetSet) {
-	const EFlag::Flag flag {0x01};
+	const EFlag::Flag flag{ 0x01 };
 
 	event_flag_.set(flag);
 
@@ -24,10 +24,10 @@ TEST_F(EventFlagTest, And) {
 TEST_F(EventFlagTest, Or) {
 	bool exited = false;
 
-	std::thread t{[&] {
+	std::thread t{ [&] {
 		event_flag_.wait(0x11, EFlag::MatchMode::OR);
 		exited = true;
-	}};
+	} };
 	event_flag_.set(0x01);
 	t.join();
 
@@ -37,9 +37,9 @@ TEST_F(EventFlagTest, Or) {
 TEST_F(EventFlagTest, TimedOut_And) {
 	bool ret = false;
 
-	std::thread t {[&] {
+	std::thread t{ [&] {
 		ret = this->event_flag_.timed_wait(0x11, EFlag::MatchMode::AND, std::chrono::seconds(1));
-	}};
+	} };
 	event_flag_.set(0x01);
 	t.join();
 
@@ -49,9 +49,9 @@ TEST_F(EventFlagTest, TimedOut_And) {
 TEST_F(EventFlagTest, TimedOut_Or) {
 	bool ret = false;
 
-	std::thread t {[&] {
+	std::thread t{ [&] {
 		ret = this->event_flag_.timed_wait(0x02, EFlag::MatchMode::OR, std::chrono::seconds(1));
-	}};
+	} };
 	event_flag_.set(0x01);
 	t.join();
 
@@ -61,13 +61,13 @@ TEST_F(EventFlagTest, TimedOut_Or) {
 TEST_F(EventFlagTest, WaitMultiple_1) {
 	int exited = 0;
 
-	std::function<void()> f {[&] {
+	std::function<void()> f{ [&] {
 		if (this->event_flag_.timed_wait(0x01, EFlag::MatchMode::AND, std::chrono::seconds(1))) {
 			exited++;
 		}
-	}};
-	std::thread thread1{f};
-	std::thread thread2 {f};
+	} };
+	std::thread thread1{ f };
+	std::thread thread2{ f };
 
 	event_flag_.set(0x01);
 
@@ -80,16 +80,16 @@ TEST_F(EventFlagTest, WaitMultiple_1) {
 TEST_F(EventFlagTest, WaitMultiple_2) {
 	int exited = 0;
 
-	std::thread thread1 {[&] {
+	std::thread thread1{ [&] {
 		if (this->event_flag_.timed_wait(0x01, EFlag::MatchMode::AND, std::chrono::seconds(1))) {
 			exited++;
 		}
-	}};
-	std::thread thread2 {[&] {
+	} };
+	std::thread thread2{ [&] {
 		if (this->event_flag_.timed_wait(0x02, EFlag::MatchMode::AND, std::chrono::seconds(1))) {
 			exited++;
 		}
-	}};
+	} };
 
 	event_flag_.set(0x01);
 

@@ -15,10 +15,10 @@ enum class EnumOperationsTestEnum : uint8_t {
 	All = Flag1 | Flag2 | Flag3
 };
 
-namespace Framework::Templates::EnumOperations::Concept {
+namespace Framework::Templates::EnumOperations {
 	template <>
-	struct HasBitwiseOperators<EnumOperationsTestEnum> : std::true_type {};
-} // namespace Framework::Templates::EnumOperations::Concept
+	inline constexpr bool kHasBitwiseOperations<EnumOperationsTestEnum> = true;
+} // namespace Framework::Templates::EnumOperations
 
 class EnumOperationsTest : public ::testing::Test {
 public:

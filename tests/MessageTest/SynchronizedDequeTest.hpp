@@ -1,8 +1,8 @@
 #ifndef TESTS_MESSAGETEST_SYNCHRONIZEDDEQUETEST_HPP
 #define TESTS_MESSAGETEST_SYNCHRONIZEDDEQUETEST_HPP
 
-#include <gtest/gtest.h>
 #include "Message/SynchronizedDeque.hpp"
+#include <gtest/gtest.h>
 
 using namespace Framework::Message;
 

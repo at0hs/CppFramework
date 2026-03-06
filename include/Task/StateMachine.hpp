@@ -26,15 +26,18 @@ namespace Framework::Task {
 
 	private:
 		static constexpr State kUndefinedState = static_cast<State>(-1);
+
 		class StateInfo {
 		public:
 			State state{ kUndefinedState };
 			EventAggregator *aggregator{ nullptr };
 			StateInfo() = default;
+
 			StateInfo(State state, EventAggregator &aggregator)
 				: state(state),
 				  aggregator(&aggregator) {}
 		};
+
 		StateTable table_;
 		std::atomic<StateInfo> current_;
 
@@ -76,10 +79,11 @@ namespace Framework::Task {
 				throw Exception("State machine not initialized", Error::Code::InvalidOperation);
 			}
 			if (!current.aggregator->publish(command, req)) {
-				return  false;
+				return false;
 			}
 			State next_state = current.aggregator->get_next_state(command);
-			if ((next_state != EventAggregator::kKeepState) && (current_.load().state != next_state)) {
+			if ((next_state != EventAggregator::kKeepState) &&
+				(current_.load().state != next_state)) {
 				set_state(next_state);
 			}
 			return true;

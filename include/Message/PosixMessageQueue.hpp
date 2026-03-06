@@ -76,7 +76,8 @@ namespace Framework::Message {
 
 			mqd_ = mq_open(name_.c_str(), O_CREAT | O_RDWR, 0666, &attr);
 			if (mqd_ == static_cast<mqd_t>(-1)) {
-				throw Framework::SystemException("PosixMessageQueue: mq_open(O_CREAT) failed", errno);
+				throw Framework::SystemException("PosixMessageQueue: mq_open(O_CREAT) failed",
+												 errno);
 			}
 		}
 
@@ -85,7 +86,8 @@ namespace Framework::Message {
 			validate_name(name);
 			mqd_ = mq_open(name_.c_str(), O_RDWR);
 			if (mqd_ == static_cast<mqd_t>(-1)) {
-				throw Framework::SystemException("PosixMessageQueue: mq_open(attach) failed", errno);
+				throw Framework::SystemException("PosixMessageQueue: mq_open(attach) failed",
+												 errno);
 			}
 		}
 
@@ -141,12 +143,28 @@ namespace Framework::Message {
 			struct mq_attr nonblock_attr{};
 			struct mq_attr old_attr{};
 			nonblock_attr.mq_flags = O_NONBLOCK;
-			mq_setattr(mqd_, &nonblock_attr, &old_attr);
+			if (mq_setattr(mqd_, &nonblock_attr, &old_attr) < 0) {
+				throw Framework::SystemException("PosixMessageQueue::clear failed to set nonblock",
+												 errno);
+			}
+
+			// RAII ガード: 例外が発生しても必ず元の属性に戻す
+			struct AttrRestorer {
+				mqd_t mqd;
+				mq_attr old_attr;
+
+				AttrRestorer(mqd_t q, mq_attr a) noexcept : mqd(q), old_attr(a) {}
+
+				AttrRestorer(const AttrRestorer &) = delete;
+				AttrRestorer &operator=(const AttrRestorer &) = delete;
+				AttrRestorer(AttrRestorer &&) = delete;
+				AttrRestorer &operator=(AttrRestorer &&) = delete;
+
+				~AttrRestorer() noexcept { mq_setattr(mqd, &old_attr, nullptr); }
+			} restorer{ mqd_, old_attr };
 
 			std::array<char, kMsgSize> buf;
 			while (mq_receive(mqd_, buf.data(), kMsgSize, nullptr) >= 0) {}
-
-			mq_setattr(mqd_, &old_attr, nullptr);
 		}
 
 		std::size_t num_message() const override {

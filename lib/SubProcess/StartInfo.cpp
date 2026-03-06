@@ -60,6 +60,9 @@ namespace Framework::SubProcess {
 		return result;
 	}
 
+	// 戻り値の const char* ポインタは environments_ 内の std::string が保持するバッファを
+	// 指している。StartInfo が生存しており environments_ が変更されない間のみ有効。
+	// exec*() 呼び出し直前など、使用直後に破棄される場面でのみ使用。
 	std::vector<const char *> StartInfo::c_style_environments() const {
 		std::vector<const char *> result;
 		result.reserve(environments_.size() + 1);

@@ -15,8 +15,12 @@ void Timer::start() {
 		thread_.join();
 	}
 	active_ = true;
-	thread_ = std::thread{ [&] {
-		std::vector<std::function<void()>> const handlers{ this->event_handlers_ };
+	thread_ = std::thread{ [this] {
+		std::vector<std::function<void()>> handlers;
+		{
+			std::lock_guard lock(handlers_mutex_);
+			handlers = event_handlers_;
+		}
 		while (true) {
 			std::this_thread::sleep_for(this->time_);
 			if (!this->active_) {
@@ -28,8 +32,7 @@ void Timer::start() {
 			if (!this->restart_) {
 				break;
 			}
-		};
-		this->thread_.detach();
+		}
 	} };
 }
 

@@ -7,32 +7,28 @@ using namespace Framework::Task;
 namespace {
 	constexpr EventRequest<>::Command kTestCommand1 = 0;
 	constexpr EventRequest<>::Command kTestCommand2 = 1;
-}
+} // namespace
 
 TEST_F(EventAggregatorTest, InitializeWithEventMap) {
 	std::string name;
 	EventRequest<>::Command command = -1;
 	std::any payload;
 	const MessageEventAggregator<>::EventMap events{
-		{ kTestCommand1,
-		  MessageEventAggregator<>::MessageInfo([&](const EventRequest<> &req) {
+		{ kTestCommand1, MessageEventAggregator<>::MessageInfo([&](const EventRequest<> &req) {
 			  name = req.get_from();
 			  command = req.get_command();
 			  payload = req.get_payload();
 			  return true;
 		  }) },
-		{ kTestCommand2,
-		  MessageEventAggregator<>::MessageInfo([&](const EventRequest<> &req) {
+		{ kTestCommand2, MessageEventAggregator<>::MessageInfo([&](const EventRequest<> &req) {
 			  name = req.get_from();
 			  command = req.get_command();
 			  payload = req.get_payload();
 			  return false;
 		  }) }
 	};
-	EventRequest<> command1_request("EventAggregatorTest", kTestCommand1,
-								   std::string("Test"));
-	EventRequest<> command2_request("EventAggregatorTest", kTestCommand2,
-								   std::string("Test"));
+	EventRequest<> command1_request("EventAggregatorTest", kTestCommand1, std::string("Test"));
+	EventRequest<> command2_request("EventAggregatorTest", kTestCommand2, std::string("Test"));
 	MessageEventAggregator<> aggregator(events);
 
 	EXPECT_TRUE(aggregator.publish(kTestCommand1, command1_request));
@@ -51,25 +47,21 @@ TEST_F(EventAggregatorTest, InitializeWithInitializerList) {
 	EventRequest<>::Command command = -1;
 	std::any payload;
 	const std::initializer_list<MessageEventAggregator<>::MessageEvent> events{
-		{ kTestCommand1,
-		  MessageEventAggregator<>::MessageInfo([&](const EventRequest<> &req) {
+		{ kTestCommand1, MessageEventAggregator<>::MessageInfo([&](const EventRequest<> &req) {
 			  name = req.get_from();
 			  command = req.get_command();
 			  payload = req.get_payload();
 			  return true;
 		  }) },
-		{ kTestCommand2,
-		  MessageEventAggregator<>::MessageInfo([&](const EventRequest<> &req) {
+		{ kTestCommand2, MessageEventAggregator<>::MessageInfo([&](const EventRequest<> &req) {
 			  name = req.get_from();
 			  command = req.get_command();
 			  payload = req.get_payload();
 			  return false;
 		  }) }
 	};
-	EventRequest<> command1_request("EventAggregatorTest", kTestCommand1,
-								   std::string("Test"));
-	EventRequest<> command2_request("EventAggregatorTest", kTestCommand2,
-								   std::string("Test"));
+	EventRequest<> command1_request("EventAggregatorTest", kTestCommand1, std::string("Test"));
+	EventRequest<> command2_request("EventAggregatorTest", kTestCommand2, std::string("Test"));
 	MessageEventAggregator<> aggregator(events);
 
 	EXPECT_TRUE(aggregator.publish(kTestCommand1, command1_request));

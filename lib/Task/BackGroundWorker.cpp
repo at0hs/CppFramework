@@ -39,7 +39,7 @@ namespace Framework::Task {
 		condition_.notify_all();
 	}
 
-	bool BackGroundWorker::cancellation_pending() const  {
+	bool BackGroundWorker::cancellation_pending() const {
 		return cancellation_pending_;
 	}
 
@@ -54,7 +54,7 @@ namespace Framework::Task {
 		}
 	}
 
-	bool BackGroundWorker::is_busy() {
+	bool BackGroundWorker::is_busy() const {
 		return running_;
 	}
 
@@ -75,15 +75,15 @@ namespace Framework::Task {
 	}
 
 	void BackGroundWorker::on_task_completed(DoTaskEventArgs &do_task_event_args,
-											  Framework::Error::Code error) {
+											 Framework::Error::Code error) {
 		if (!task_completed_) {
 			running_ = false;
 			cancellation_pending_ = false;
 			progress_ = 0;
 			return;
 		}
-		TaskCompletedEventArgs args{ do_task_event_args.get_cancel(), do_task_event_args.get_result(),
-									 error };
+		TaskCompletedEventArgs args{ do_task_event_args.get_cancel(),
+									 do_task_event_args.get_result(), error };
 		task_completed_(*this, args);
 
 		cancellation_pending_ = false;

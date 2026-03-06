@@ -32,14 +32,6 @@ namespace Framework::SubProcess {
 
 		~Process();
 
-		// --- static ファクトリー ---
-
-		// 非同期でプロセスを起動し、future<ProcessResult> を返す
-		static std::future<ProcessResult> start_async(const StartInfo &start_info);
-
-		// プロセスを起動して終了まで待機し、ProcessResult を返す
-		static ProcessResult start(const StartInfo &start_info);
-
 		// --- インスタンスメソッド ---
 
 		// 非同期でプロセスを起動し、future<ProcessResult> を返す

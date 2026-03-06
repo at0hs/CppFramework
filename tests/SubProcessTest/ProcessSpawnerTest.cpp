@@ -8,34 +8,34 @@ using namespace Framework::SubProcess;
 
 namespace {
 
-// テスト用ヘルパー: spawn した子プロセスを回収して終了コードを返す
-int wait_child(pid_t pid) {
-	int status{ 0 };
-	::waitpid(pid, &status, 0);
-	return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
-}
-
-// テスト用関数: 整数ポインタが指す値をそのまま返す
-int return_value(const int* arg) {
-	return *arg;
-}
-
-// テスト用関数: nullptr を受け取っても安全に動作する
-int handle_null_safely(const int* arg) {
-	if (arg == nullptr) {
-		return 0;
+	// テスト用ヘルパー: spawn した子プロセスを回収して終了コードを返す
+	int wait_child(pid_t pid) {
+		int status{ 0 };
+		::waitpid(pid, &status, 0);
+		return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 	}
-	return *arg;
-}
 
-// テスト用: 構造体引数
-struct SpawnArgs {
-	int value;
-};
+	// テスト用関数: 整数ポインタが指す値をそのまま返す
+	int return_value(const int *arg) {
+		return *arg;
+	}
 
-int return_struct_value(SpawnArgs* arg) {
-	return arg->value;
-}
+	// テスト用関数: nullptr を受け取っても安全に動作する
+	int handle_null_safely(const int *arg) {
+		if (arg == nullptr) {
+			return 0;
+		}
+		return *arg;
+	}
+
+	// テスト用: 構造体引数
+	struct SpawnArgs {
+		int value;
+	};
+
+	int return_struct_value(SpawnArgs *arg) {
+		return arg->value;
+	}
 
 } // namespace
 

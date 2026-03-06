@@ -1,8 +1,8 @@
 #ifndef TESTS_SYNCTEST_EVENTFLAGTEST_HPP
 #define TESTS_SYNCTEST_EVENTFLAGTEST_HPP
 
-#include "gtest/gtest.h"
 #include "Sync/EventFlag.hpp"
+#include "gtest/gtest.h"
 
 class EventFlagTest : public ::testing::Test {
 protected:

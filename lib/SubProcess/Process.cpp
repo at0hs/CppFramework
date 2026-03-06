@@ -59,17 +59,6 @@ namespace Framework::SubProcess {
 		}
 	}
 
-	// --- static ファクトリー ---
-
-	std::future<ProcessResult> Process::start_async(const StartInfo &start_info) {
-		Process proc{ start_info };
-		return proc.start_async();
-	}
-
-	ProcessResult Process::start(const StartInfo &start_info) {
-		return start_async(start_info).get();
-	}
-
 	// --- インスタンスメソッド ---
 
 	std::future<ProcessResult> Process::start_async() {

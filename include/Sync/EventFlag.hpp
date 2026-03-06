@@ -13,6 +13,7 @@ namespace EFlag {
 		AND,
 		OR,
 	};
+
 	class EventFlag {
 		std::atomic<Flag> pattern_{ 0 };
 		std::mutex mutex_;

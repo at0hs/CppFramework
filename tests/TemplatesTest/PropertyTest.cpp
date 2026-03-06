@@ -20,6 +20,7 @@ namespace {
 				value = new_value * 3600;
 			}
 		};
+
 		struct Getter {
 			static double get(const double &value) noexcept { return value / 3600; }
 		};
@@ -30,6 +31,7 @@ namespace {
 
 	public:
 		ReferenceProperty::FunctionSetter<int(int)> function{ function_ };
+
 		int invoke(int value) { return function_(value); }
 	};
 } // namespace
@@ -101,7 +103,7 @@ TEST_F(PropertyTest, FunctionSetter) {
 TEST_F(PropertyTest, Property_Writable) {
 	int value = 0;
 	Property<int>::Writable writable_property{ [&]() -> int { return value; },
-											  [&](const int &new_value) { value = new_value; } };
+											   [&](const int &new_value) { value = new_value; } };
 
 	writable_property = 10;
 	int actual = writable_property;

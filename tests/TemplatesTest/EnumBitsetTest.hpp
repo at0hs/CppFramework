@@ -1,10 +1,10 @@
 #ifndef TESTS_TEMPLATESTEST_ENUMBITSETTEST_HPP
 #define TESTS_TEMPLATESTEST_ENUMBITSETTEST_HPP
 
-#include "gtest/gtest.h"
 #include "Templates/EnumBitset.hpp"
+#include "gtest/gtest.h"
 
-enum class BitsetTestEnum: uint8_t {
+enum class BitsetTestEnum : uint8_t {
 	Value1 = 1 << 0,
 	Value2 = 1 << 1,
 	Value3 = 1 << 2,

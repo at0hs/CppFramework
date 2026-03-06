@@ -7,8 +7,8 @@
 using namespace Framework::Task;
 
 namespace {
-	enum class TestState: uint8_t { IDLE, RUNNING, STOPPED };
-	enum class TestCommand: uint8_t { START, STOP };
+	enum class TestState : uint8_t { IDLE, RUNNING, STOPPED };
+	enum class TestCommand : uint8_t { START, STOP };
 
 	// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 	EventRequest<TestCommand> last_request{ "", static_cast<TestCommand>(-1) };
@@ -41,7 +41,7 @@ namespace {
 		{ TestState::RUNNING, kRunningEvents },
 		{ TestState::STOPPED, kStoppedEvents },
 	};
-} // namespace StatementTaskUnitTest
+} // namespace
 
 void StatementTaskTest::SetUp() {
 	last_request = EventRequest<TestCommand>{ "", static_cast<TestCommand>(-1) };

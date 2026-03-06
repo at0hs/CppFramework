@@ -45,6 +45,7 @@ namespace Framework::Task {
 
 	public:
 		MessageEventAggregator() = default;
+
 		MessageEventAggregator(const EventMap &events) : events_(events) {}
 
 		void add(Command command, EventHandler handler, State next_state = kKeepState) {

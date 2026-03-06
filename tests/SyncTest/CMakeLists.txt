@@ -14,14 +14,14 @@ target_include_directories(${TARGET} PRIVATE
 target_link_libraries(${TARGET} PRIVATE
 	${PROJECT_NAME}
 	${TESTING_FRAMEWORK}
-	$<$<CONFIG:Coverage>:gcov>
-	$<$<CONFIG:AddressSanitizer>:asan>
+	$<$<CONFIG:TestPlus>:gcov>
+	$<$<CONFIG:TestPlus>:asan>
 )
 
 target_compile_options(${TARGET} PRIVATE
 	${TEST_OPTIONS}
-	$<$<CONFIG:Coverage>:--coverage>
-	$<$<CONFIG:AddressSanitizer>:-fsanitize=address>
+	$<$<CONFIG:TestPlus>:--coverage>
+	$<$<CONFIG:TestPlus>:-fsanitize=address>
 )
 
 add_test(NAME ${TARGET} COMMAND ${TARGET})

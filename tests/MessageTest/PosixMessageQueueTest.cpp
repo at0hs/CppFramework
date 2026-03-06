@@ -84,7 +84,7 @@ TEST_F(PosixMQTest, ClearQueue) {
 
 TEST_F(PosixMQStructTest, StructTypeMessage) {
 	// Arrange
-	const Point sent { .x=10, .y=-5, .z=3.14F };
+	const Point sent{ .x = 10, .y = -5, .z = 3.14F };
 
 	// Act
 	queue_->send(sent);
@@ -110,19 +110,13 @@ TEST_F(PosixMQTest, TimedReceiveTimeout) {
 
 TEST(PosixMQErrorTest, InvalidQueueNameThrows) {
 	// '/' で始まらない名前は InvalidArgument
-	EXPECT_THROW(
-		PosixMessageQueue<int>("no_slash", Owner{}),
-		Framework::Exception
-	);
+	EXPECT_THROW(PosixMessageQueue<int>("no_slash", Owner{}), Framework::Exception);
 }
 
 TEST(PosixMQErrorTest, AttachNonExistentQueueThrows) {
 	// 存在しないキューへの Attach は SystemError
 	mq_unlink("/fw_nonexistent_mq"); // 確実に存在しない状態にする
-	EXPECT_THROW(
-		PosixMessageQueue<int>("/fw_nonexistent_mq", Attach{}),
-		Framework::Exception
-	);
+	EXPECT_THROW(PosixMessageQueue<int>("/fw_nonexistent_mq", Attach{}), Framework::Exception);
 }
 
 // ============================================================
@@ -130,12 +124,12 @@ TEST(PosixMQErrorTest, AttachNonExistentQueueThrows) {
 // ============================================================
 
 TEST_F(PosixMQTest, MultipleSendersSingleReceiver) {
-	constexpr int num_senders      = 3;
+	constexpr int num_senders = 3;
 	constexpr int msg_per_sender = 5;
-	constexpr int total        = num_senders * msg_per_sender;
+	constexpr int total = num_senders * msg_per_sender;
 
 	static constexpr std::string_view attach_name = "/fw_test_posix_mq";
-	std::atomic<int> received_count { 0 };
+	std::atomic<int> received_count{ 0 };
 
 	// 複数スレッドが同じキューに送信（Attach モード）
 	std::vector<std::thread> senders;
@@ -158,7 +152,9 @@ TEST_F(PosixMQTest, MultipleSendersSingleReceiver) {
 		}
 	});
 
-	for (auto& t : senders) { t.join(); }
+	for (auto &t : senders) {
+		t.join();
+	}
 	receiver.join();
 
 	EXPECT_EQ(total, received_count.load());

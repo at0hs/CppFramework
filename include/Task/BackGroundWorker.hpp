@@ -25,10 +25,13 @@ namespace Framework::Task {
 			DoTaskEventArgs() = default;
 
 			void set_cancel(bool cancel) { cancel_ = cancel; }
+
 			bool get_cancel() const { return cancel_; }
 
 			void set_result(const std::any &result) { result_ = result; }
+
 			void set_result(std::any &&result) { result_ = std::move(result); }
+
 			const std::any &get_result() const { return result_; }
 		};
 
@@ -45,7 +48,9 @@ namespace Framework::Task {
 				  error_(error) {}
 
 			bool cancelled() const { return cancelled_; }
+
 			Framework::Error::Code error_code() const { return error_; }
+
 			template <typename T = std::any>
 			const auto &result() const {
 				return std::any_cast<const T &>(*result_);
@@ -59,6 +64,7 @@ namespace Framework::Task {
 
 		public:
 			explicit ProgressChangedEventArgs(Progress progress) : progress_(progress) {}
+
 			Progress progress_percent() const { return progress_; }
 		};
 
@@ -75,7 +81,7 @@ namespace Framework::Task {
 		std::condition_variable condition_;
 		std::atomic<bool> running_{ false };
 		bool stop_{ false };
-		bool cancellation_pending_{ false };
+		std::atomic<bool> cancellation_pending_{ false };
 		Progress progress_{ 0 };
 
 		TaskCompletedEventHandler task_completed_;
@@ -94,7 +100,7 @@ namespace Framework::Task {
 		bool cancellation_pending() const;
 		void cancel_async();
 		void reports_progress(Progress percent);
-		bool is_busy();
+		bool is_busy() const;
 
 		ReferenceProperty::FunctionSetter<TaskCompletedEventHandler> task_completed{
 			task_completed_

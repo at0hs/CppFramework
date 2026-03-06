@@ -27,8 +27,8 @@ protected:
 
 // POD struct を使うテスト用フィクスチャ
 struct Point {
-	int   x;
-	int   y;
+	int x;
+	int y;
 	float z;
 };
 
@@ -43,9 +43,7 @@ protected:
 		queue_ = std::make_unique<PosixMessageQueue<Point>>(kName, Owner{});
 	}
 
-	void TearDown() override {
-		queue_.reset();
-	}
+	void TearDown() override { queue_.reset(); }
 };
 
 #endif // TESTS_MESSAGETEST_POSIXMESSAGEQUEUETEST_HPP

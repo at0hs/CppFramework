@@ -110,7 +110,9 @@ TEST_F(EnumBitsetTest, InequalityOperator) {
 
 TEST_F(EnumBitsetTest, ToUnderlying) {
 	EnumBitset<BitsetTestEnum> bitset({ BitsetTestEnum::Value1, BitsetTestEnum::Value3 });
-	EXPECT_EQ(static_cast<typename EnumBitset<BitsetTestEnum>::UnderlyingType>(BitsetTestEnum::Value1) |
-		static_cast<typename EnumBitset<BitsetTestEnum>::UnderlyingType>(BitsetTestEnum::Value3),
+	EXPECT_EQ(
+		static_cast<typename EnumBitset<BitsetTestEnum>::UnderlyingType>(BitsetTestEnum::Value1) |
+			static_cast<typename EnumBitset<BitsetTestEnum>::UnderlyingType>(
+				BitsetTestEnum::Value3),
 		bitset.to_underlying());
 }
